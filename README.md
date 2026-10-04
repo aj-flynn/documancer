@@ -71,7 +71,7 @@ node install.mjs cursor /path/to/project --agents
 | OpenCode | `.opencode/skills/documancer/` | `.opencode/agents/` |
 | Cursor | `.cursor/skills/documancer/` | `.cursor/agents/` |
 
-Agents are `documancer-map`, `documancer-analyze`, `documancer-write`, and `documancer-review`. Use them selectively for substantial discovery or independent drafts, with at most two concurrent documentation agents. Small edits stay with the parent; deterministic rendering needs no agent. The skill works without custom agents.
+Agents are `documancer-map`, `documancer-analyze`, `documancer-write`, and `documancer-review`. Use them selectively for substantial discovery or independent drafts. Codex and OpenCode start with at most two concurrent documentation agents. Cursor launches every ready documentation task in one turn and holds a task until its packet, outline, or draft exists. Small edits stay with the parent; deterministic rendering needs no agent. The skill works without custom agents.
 
 To add agents later, use the chosen edition's helper:
 

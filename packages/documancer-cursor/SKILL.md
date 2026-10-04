@@ -26,7 +26,7 @@ Search and read the implementation directly. Check the exported HTML with Cursor
 
 ## Keep work proportional
 
-For substantial independent discovery, a large unfamiliar codebase, or separate requested document drafts, launch the optional subagents in [delegation.md](references/delegation.md) with the Task tool when they are installed. Use subagent types `documancer-map`, `documancer-analyze`, `documancer-write`, and `documancer-review` only for the cases that file describes. A small edit stays in this agent. Do not also run the built-in Explore subagent over the same scope, and do not send rendering or file copying to a subagent.
+For substantial independent discovery, a large unfamiliar codebase, or separate requested document drafts, launch the optional subagents in [delegation.md](references/delegation.md) with the Task tool when they are installed. Launch every ready task in one turn, and hold a task until the packet, outline, or draft it needs exists. Use subagent types `documancer-map`, `documancer-analyze`, `documancer-write`, and `documancer-review` only for the cases that file describes. A small edit stays in this agent. Do not also run the built-in Explore subagent over the same scope, and do not send rendering or file copying to a subagent.
 
 ## Create the document
 
