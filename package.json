@@ -1,0 +1,13 @@
+{
+  "name": "documancer-workspace",
+  "version": "1.4.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test scripts/*.test.mjs packages/documancer/scripts/*.test.mjs",
+    "sync": "node scripts/sync-shared.mjs",
+    "check": "node scripts/sync-shared.mjs --check",
+    "examples": "node packages/documancer/scripts/render.mjs --set packages/documancer/examples/set.json dist/examples"
+  }
+}

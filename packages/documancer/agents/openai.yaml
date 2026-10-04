@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documancer"
+  short_description: "Technical guides, user docs, and interactive UAT plans"
+  default_prompt: "Use $documancer to create the requested documentation with the shared Forest design."
