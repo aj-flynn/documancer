@@ -45,6 +45,58 @@
               "Shared presentation, browser behavior and licensed font"
             ]
           ]
+        },
+        {
+          "type": "diagram",
+          "caption": "Document generation and recovery",
+          "description": "Editable JSON is validated before HTML is written. Valid input produces a self-contained document; invalid input is corrected and submitted again.",
+          "nodes": [
+            {
+              "id": "source",
+              "label": "Editable JSON",
+              "row": 0,
+              "column": 0
+            },
+            {
+              "id": "validate",
+              "label": "Validate source",
+              "row": 1,
+              "column": 0
+            },
+            {
+              "id": "html",
+              "label": "Self-contained HTML",
+              "row": 2,
+              "column": 0
+            },
+            {
+              "id": "fix",
+              "label": "Correct source",
+              "row": 1,
+              "column": 1
+            }
+          ],
+          "edges": [
+            {
+              "from": "source",
+              "to": "validate"
+            },
+            {
+              "from": "validate",
+              "to": "html",
+              "label": "Valid"
+            },
+            {
+              "from": "validate",
+              "to": "fix",
+              "label": "Invalid"
+            },
+            {
+              "from": "fix",
+              "to": "source",
+              "label": "Retry"
+            }
+          ]
         }
       ]
     },

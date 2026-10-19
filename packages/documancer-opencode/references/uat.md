@@ -26,4 +26,6 @@ Evidence includes check/command, outcome, date, code/configuration/fixture ident
 
 The final summary includes plan identity, five counts, every scenario's latest selection and notes, and separate automated evidence/history. Clipboard rejection leaves generated text visible and selected with an honest recovery message. Edits after generation mark it stale. Results are session-only: tell the reader to generate and retain the summary before reloading or closing.
 
+Use a `diagram` block in setup or prerequisites when it helps explain starting states, journey branches or dependencies. It supplements the ordered test instructions and never indicates acceptance or preselects a result.
+
 See `../examples/uat.json` and `data-contract.md`. This mode supersedes the design and HTML schema of the earlier Legimancer `uat-test-plan` skill when adopted; it preserves that skill's meaningful human-acceptance practices. Installing here does not remove that skill from any other repository.

@@ -10,6 +10,8 @@ Documentation skills for **Codex, OpenCode, and Cursor**. Create editable JSON a
 
 All modes share the Forest dark and cream light design, embedded fonts, search, and navigation. UAT starts **Untested**. Results and notes are session-only and **lost on reload**; Generate summary produces and copies the current results, with manual selection if clipboard access fails. Automated evidence is separate from human acceptance.
 
+All three editions include diagrams when they help explain code or processes. Structured JSON nodes and edges render to static, theme-aware SVG inside the HTML, with wrapped labels, directed arrows and a text alternative. No Mermaid runtime, external assets or extra dependencies are required. Diagrams scroll horizontally when needed to preserve readability. Click a diagram or select Expand diagram for a full-window view; Close diagram or Escape returns to the document. See the [diagram data contract](packages/documancer/references/data-contract.md#diagrams) and the included examples.
+
 ## Install
 
 Download or clone this repository and run the appropriate command from its root. Replace `/path/to/project` with an **existing** project directory; quote paths with spaces. Commands work in PowerShell, macOS, and Linux shells.

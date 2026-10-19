@@ -1,6 +1,7 @@
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {resolve, dirname, relative, isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {validateDiagram, diagramHTML} from './diagram.mjs';
 
 const assets = new URL('../assets/', import.meta.url);
 const company = 'Flynn Technology LLC';
@@ -38,7 +39,7 @@ export function validate(doc) {
     array(value,path);if(depth>12)fail(path,'block nesting exceeds 12 levels');
     value.forEach((b,i)=>{
       const p=`${path}[${i}]`;if(!b || typeof b!=='object')fail(p,'expected a block');
-      const fields={paragraph:['text'],heading:['text'],list:['items'],steps:['items'],code:['text','language'],table:['caption','columns','rows'],callout:['title','text'],details:['title','blocks'],links:['items']}[b.type];
+      const fields={paragraph:['text'],heading:['text'],list:['items'],steps:['items'],code:['text','language'],table:['caption','columns','rows'],callout:['title','text'],details:['title','blocks'],links:['items'],diagram:['caption','description','nodes','edges']}[b.type];
       if(!fields)fail(p+'.type','unsupported block type');object(b,['type',...fields],p);
       if(['paragraph','heading','code','callout'].includes(b.type))string(b.text,p+'.text');
       if(['callout','details'].includes(b.type))string(b.title,p+'.title');
@@ -46,6 +47,7 @@ export function validate(doc) {
       if(['list','steps'].includes(b.type))strings(b.items,p+'.items');
       if(b.type==='links'){array(b.items,p+'.items');b.items.forEach((x,j)=>link(x,`${p}.items[${j}]`));}
       if(b.type==='details')blocks(b.blocks,p+'.blocks',depth+1);
+      if(b.type==='diagram')validateDiagram(b,p);
       if(b.type==='table'){string(b.caption,p+'.caption');strings(b.columns,p+'.columns');array(b.rows,p+'.rows');b.rows.forEach((row,j)=>{array(row,`${p}.rows[${j}]`);if(row.length!==b.columns.length)fail(p+'.rows','row width must match columns');row.forEach(v=>{if(typeof v!=='string')fail(p+'.rows','cells must be strings');});});}
     });
   }
@@ -69,14 +71,15 @@ export function validate(doc) {
 
 const linkHTML=(l,newTab=false)=>`<a href="${escape(l.href)}"${newTab?' target="_blank" rel="noopener noreferrer"':''}>${escape(l.label)}${newTab?'<span class="sr-only"> (opens in a new tab)</span>':''}</a>`;
 const listHTML=(items,ordered=false)=>`<${ordered?'ol class="steps"':'ul class="prose-list"'}>${items.map(x=>`<li>${escape(x)}</li>`).join('')}</${ordered?'ol':'ul'}>`;
-function blockHTML(blocks,renderLink=linkHTML){return blocks.map(b=>{
+function blockHTML(blocks,renderLink=linkHTML,renderDiagram){return blocks.map(b=>{
   switch(b.type){
     case 'paragraph':return `<p>${escape(b.text)}</p>`;
     case 'heading':return `<h3>${escape(b.text)}</h3>`;
     case 'list':case 'steps':return listHTML(b.items,b.type==='steps');
     case 'code':return `<div class="code-example"><div class="code-toolbar"><span>${escape(b.language??'Code')}</span><button class="copy-code" type="button">Copy code</button></div><pre tabindex="0"><code>${escape(b.text)}</code></pre></div>`;
     case 'callout':return `<aside class="note"><strong>${escape(b.title)}</strong><p>${escape(b.text)}</p></aside>`;
-    case 'details':return `<details><summary>${escape(b.title)}</summary>${blockHTML(b.blocks,renderLink)}</details>`;
+    case 'details':return `<details><summary>${escape(b.title)}</summary>${blockHTML(b.blocks,renderLink,renderDiagram)}</details>`;
+    case 'diagram':return renderDiagram(b);
     case 'links':return `<ul class="prose-list">${b.items.map(l=>`<li>${renderLink(l)}</li>`).join('')}</ul>`;
     case 'table':return `<div class="table-wrap" tabindex="0" role="region" aria-label="${escape(b.caption)}"><table><caption>${escape(b.caption)}</caption><thead><tr>${b.columns.map(c=>`<th scope="col">${escape(c)}</th>`).join('')}</tr></thead><tbody>${b.rows.map(row=>`<tr>${row.map((c,i)=>i===0?`<th scope="row">${escape(c)}</th>`:`<td>${escape(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
@@ -89,7 +92,10 @@ export async function renderDocument(input,{companions=[]}={}){
   const related=allowed.map(c=>({href:c.href,label:doc.related?.find(l=>l.href===c.href)?.label??({'technical':'Technical reference','user-guide':'User guide'}[c.mode])}));
   const destination=l=>companions.find(c=>new URL(l.href,'https://document.invalid/').pathname===new URL(c.href,'https://document.invalid/').pathname && new URL(l.href,'https://document.invalid/').origin==='https://document.invalid');
   const renderLink=l=>{const target=destination(l);if(doc.mode!=='uat'&&target?.mode==='uat')return escape(l.label);return linkHTML(l,doc.mode==='uat'&&['technical','user-guide'].includes(target?.mode));};
-  const blocks=items=>blockHTML(items,renderLink);
+  let diagramIndex=0,diagramPrefix='documancer-diagram';
+  const authoredIDs=(doc.mode==='uat'?doc.tests:doc.sections).map(item=>item.id);
+  while(authoredIDs.some(id=>id.toLowerCase().startsWith(diagramPrefix+'-')))diagramPrefix+='-x';
+  const blocks=items=>blockHTML(items,renderLink,b=>diagramHTML(b,`${diagramPrefix}-${++diagramIndex}`));
   const read=name=>readFile(new URL(name,assets),'utf8');
   const [tokens,base,forest,forms,theme,runtime,font,license]=await Promise.all([read('tokens.css'),read('base.css'),read('forest.css'),read('document.css'),read('theme.js'),read('document.js'),readFile(new URL('source-sans-3-variable.woff2',assets)),read('OFL.txt')]);
   const css=tokens.replace('url("fonts/source-sans-3-variable.woff2")',`url("data:font/woff2;base64,${font.toString('base64')}")`)+base.replace(/@import[^;]+;/g,'')+forest+forms;

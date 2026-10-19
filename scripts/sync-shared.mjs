@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../packages/', import.meta.url));
 const source = join(root, 'documancer');
 const entries = ['assets', 'examples', 'references/data-contract.md', 'references/technical.md',
-  'references/user-guide.md', 'references/uat.md', 'scripts/render.mjs', 'scripts/render.test.mjs'];
+  'references/user-guide.md', 'references/uat.md', 'scripts/render.mjs', 'scripts/render.test.mjs', 'scripts/diagram.mjs'];
 const check = process.argv.includes('--check');
 if (process.argv.slice(2).some(arg => arg !== '--check')) throw new Error('Usage: node scripts/sync-shared.mjs [--check]');
 

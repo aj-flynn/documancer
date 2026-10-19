@@ -51,6 +51,37 @@ Test IDs begin with a letter and contain letters, digits or hyphens. IDs must be
 | `callout` | `title`, `text` |
 | `details` | `title`, `blocks`: nonempty block array |
 | `links` | `items`: nonempty `{ "label", "href" }` array |
+| `diagram` | `caption`, `description`, `nodes`, `edges`: static SVG generated from the grid below |
+
+### Diagrams
+
+Use diagrams when relationships, branches, sequence or state changes are easier to understand visually. All text is escaped, including SVG labels. No raw SVG, HTML, Mermaid, external images or network resources are accepted. The generated SVG uses the document's embedded font and theme colors, and remains visible without JavaScript. A keyboard-focusable horizontal scroll region preserves the diagram's readable size on narrow screens. With JavaScript and browser dialog support, clicking the SVG, pressing Enter in its scroll region, or selecting Expand diagram opens a full-window modal with scrolling, a Close diagram button and Escape support. Closing restores focus to the opener. No browser fullscreen permission is needed. Without JavaScript or dialog support, the static diagram and text alternative remain usable and expansion buttons stay hidden. A text alternative lists every node and directed relationship; the author supplies the explanatory `description`.
+
+```json
+{
+  "type": "diagram",
+  "caption": "Document generation",
+  "description": "Source JSON is validated before HTML is written. Invalid input must be corrected before trying again.",
+  "nodes": [
+    { "id": "source", "label": "Editable JSON", "row": 0, "column": 0 },
+    { "id": "validate", "label": "Validate source", "row": 1, "column": 0 },
+    { "id": "html", "label": "Self-contained HTML", "row": 2, "column": 0 },
+    { "id": "fix", "label": "Correct source", "row": 1, "column": 1 }
+  ],
+  "edges": [
+    { "from": "source", "to": "validate" },
+    { "from": "validate", "to": "html", "label": "Valid" },
+    { "from": "validate", "to": "fix", "label": "Invalid" },
+    { "from": "fix", "to": "source", "label": "Retry" }
+  ]
+}
+```
+
+Each diagram has 1–40 nodes and 0–80 directed edges. Each node requires a unique lowercase-slug `id`, a nonempty `label` of at most 180 Unicode code points, and integer `row`/`column` positions from 0 to 7. Positions start at the top left; two nodes cannot occupy one cell. IDs are local to the diagram. Each edge requires existing `from`/`to` node IDs and an optional nonempty `label` of at most 48 code points. Duplicate directed edges and self edges are rejected; reverse edges and cycles between different nodes are supported. Unknown fields are rejected.
+
+Place related nodes in neighboring cells. The renderer sizes rows for wrapped labels and routes orthogonal arrows around occupied boxes. It does not infer a chronology, decision, or relationship from grid placement: author every intended arrow explicitly, and label decision branches. Edge crossings or shared segments are possible in dense diagrams; inspect the export and rearrange or split diagrams when ambiguous. Use short labels and explain details in the description or nearby prose. This is a box-and-arrow vocabulary, not UML or a sequence-diagram grammar.
+
+Diagrams work anywhere blocks are accepted, including nested details and UAT prerequisites. Verify the final HTML in both themes and at narrow widths: readable labels, correct arrow directions, no clipping or ambiguous overlaps, keyboard scrolling, and no page-wide horizontal overflow. Successful CLI rendering alone is not visual verification.
 
 Links support HTTPS, HTTP, mailto, fragment anchors and relative document paths. Protocol-relative URLs, backslashes, control characters and other schemes are rejected. Local fragment links must reference a generated section ID; cross-document fragments are the author's responsibility. The renderer never fetches linked resources.
 

@@ -6,4 +6,6 @@ A useful order is architecture and boundaries, local setup, behavior/contracts, 
 
 Use code blocks for copyable commands and examples, tables for fields or configuration, and details for secondary troubleshooting. Examples that are not executable must be labeled illustrative. Never embed secret values. A document about an API may contain authentication, request/response and error reference; other technical documents need not.
 
+Use `diagram` blocks for component boundaries, dependency direction, request flow or state transitions when they reduce the reader's effort. Ground nodes and edges in implementation evidence, describe abstractions, and label branch conditions. Prefer several focused diagrams over one dense system map.
+
 See `../examples/technical.json` for the renderer's supported structure. Do not inherit its fictional system facts into real documentation.

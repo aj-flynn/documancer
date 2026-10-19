@@ -29,6 +29,41 @@
       "type": "callout",
       "title": "Navigation during testing",
       "text": "Links to the technical reference and user guide open in a new tab, keeping this plan and its results open."
+    },
+    {
+      "type": "diagram",
+      "caption": "Human acceptance workflow",
+      "description": "Complete shared setup, exercise each journey, then generate and retain the summary before closing the tab. Results are not saved on reload.",
+      "nodes": [
+        {
+          "id": "setup",
+          "label": "Complete shared setup",
+          "row": 0,
+          "column": 0
+        },
+        {
+          "id": "test",
+          "label": "Exercise journeys and record observations",
+          "row": 1,
+          "column": 0
+        },
+        {
+          "id": "retain",
+          "label": "Generate and retain the summary",
+          "row": 2,
+          "column": 0
+        }
+      ],
+      "edges": [
+        {
+          "from": "setup",
+          "to": "test"
+        },
+        {
+          "from": "test",
+          "to": "retain"
+        }
+      ]
     }
   ],
   "tests": [

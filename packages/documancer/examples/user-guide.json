@@ -92,6 +92,47 @@
             "Check the confirmation, then paste the result into your task or message. If copying is blocked, copy the selected text using Ctrl+C or Command+C.",
             "If you change a result or note afterward, generate the summary again before sharing."
           ]
+        },
+        {
+          "type": "diagram",
+          "caption": "Retaining a test summary",
+          "description": "Generate summary attempts to copy the result. Paste it if copying succeeds; otherwise copy the selected text manually before sharing.",
+          "nodes": [
+            {
+              "id": "generate",
+              "label": "Generate summary",
+              "row": 0,
+              "column": 0
+            },
+            {
+              "id": "paste",
+              "label": "Paste the copied summary",
+              "row": 1,
+              "column": 0
+            },
+            {
+              "id": "copy",
+              "label": "Copy the selected text manually",
+              "row": 0,
+              "column": 1
+            }
+          ],
+          "edges": [
+            {
+              "from": "generate",
+              "to": "paste",
+              "label": "Copied"
+            },
+            {
+              "from": "generate",
+              "to": "copy",
+              "label": "Copy blocked"
+            },
+            {
+              "from": "copy",
+              "to": "paste"
+            }
+          ]
         }
       ]
     },

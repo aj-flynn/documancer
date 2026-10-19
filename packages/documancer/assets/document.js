@@ -21,6 +21,52 @@
     try{await navigator.clipboard.writeText(code.textContent);document.querySelector('.live-message').textContent='Code copied to clipboard.'}
     catch{const range=document.createRange();range.selectNodeContents(code);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);document.querySelector('.live-message').textContent='Clipboard access was blocked. Code selected; press Ctrl+C or Command+C.'}
   }));
+  const diagrams=[...document.querySelectorAll('.diagram')];
+  if(diagrams.length && typeof HTMLDialogElement!=='undefined' && typeof HTMLDialogElement.prototype.showModal==='function'){
+    const dialog=document.createElement('dialog');dialog.className='diagram-dialog';dialog.setAttribute('aria-label','Expanded diagram');
+    dialog.innerHTML='<div class="diagram-dialog-toolbar"><strong></strong><button type="button">Close diagram</button></div><p>Scroll to explore. Press Escape or Close diagram to return.</p><div class="diagram-dialog-scroll" tabindex="0" role="region" aria-label="Expanded diagram canvas"></div>';
+    document.body.append(dialog);
+    const canvas=dialog.querySelector('.diagram-dialog-scroll');let opener,previousOverflow;
+    function fitDiagram(){
+      const svg=canvas.querySelector('svg');if(!dialog.open||!svg)return;
+      const width=Number(svg.getAttribute('width')),height=Number(svg.getAttribute('height'));
+      const scale=Math.max(1,Math.min((canvas.clientWidth-2)/width,(canvas.clientHeight-2)/height));
+      svg.style.width=width*scale+'px';svg.style.height=height*scale+'px';
+    }
+    addEventListener('resize',fitDiagram);
+    function expand(figure,trigger){
+      if(dialog.open)return;
+      const svg=figure.querySelector('.diagram-svg').cloneNode(true);
+      svg.querySelectorAll('[id]').forEach(element=>element.id+='-expanded');
+      svg.setAttribute('aria-labelledby',svg.getAttribute('aria-labelledby').split(' ').map(id=>id+'-expanded').join(' '));
+      svg.querySelectorAll('[marker-end]').forEach(element=>element.setAttribute('marker-end',element.getAttribute('marker-end').replace(')', '-expanded)')));
+      const title=figure.querySelector('figcaption span').textContent;
+      dialog.querySelector('strong').textContent=title;dialog.setAttribute('aria-label',title+' — expanded diagram');
+      canvas.replaceChildren(svg);opener=trigger;previousOverflow=document.body.style.overflow;
+      dialog.showModal();document.body.style.overflow='hidden';fitDiagram();canvas.scrollTop=0;canvas.scrollLeft=0;
+    }
+    function closeDiagram(){
+      if(!dialog.open)return;
+      dialog.close();canvas.replaceChildren();document.body.style.overflow=previousOverflow;opener?.focus({preventScroll:true});
+    }
+    dialog.querySelector('button').addEventListener('click',closeDiagram);
+    dialog.addEventListener('cancel',event=>{event.preventDefault();closeDiagram();});
+    dialog.addEventListener('keydown',event=>{
+      if(event.key!=='Tab')return;
+      const close=dialog.querySelector('button');
+      if(event.shiftKey&&document.activeElement===close){event.preventDefault();canvas.focus();}
+      else if(!event.shiftKey&&document.activeElement===canvas){event.preventDefault();close.focus();}
+    });
+    addEventListener('beforeprint',closeDiagram);
+    diagrams.forEach(figure=>{
+      const button=figure.querySelector('.diagram-expand'),region=figure.querySelector('.diagram-scroll');button.hidden=false;
+      button.addEventListener('click',()=>expand(figure,button));
+      region.classList.add('diagram-expandable');
+      region.setAttribute('aria-description','Click the diagram or press Enter to expand. Arrow keys scroll.');
+      region.addEventListener('click',event=>{if(event.target.closest('.diagram-svg')&&!getSelection()?.toString())expand(figure,region);});
+      region.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();expand(figure,region);}});
+    });
+  }
   let closedDetails=[];
   addEventListener('beforeprint',()=>{closedDetails=[...document.querySelectorAll('.article details:not([open])')];closedDetails.forEach(d=>d.open=true)});
   addEventListener('afterprint',()=>closedDetails.forEach(d=>d.open=false));

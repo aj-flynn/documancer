@@ -9,7 +9,7 @@ const entries = [
   'SKILL.md', 'README.md', 'INSTALL.md', 'USAGE.md', 'package.json', 'install.mjs',
   'assets', 'examples', 'references', 'subagents',
 ];
-const scriptEntries = ['render.mjs', 'install-agents.mjs'];
+const scriptEntries = ['render.mjs', 'diagram.mjs', 'install-agents.mjs'];
 
 async function inspect(path) {
   try { return await lstat(path); }

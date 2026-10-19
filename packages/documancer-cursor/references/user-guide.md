@@ -6,4 +6,6 @@ State the actual access, account role and starting location needed. Use the visi
 
 Do not invent support channels, roles or features. When access or behavior cannot be verified, identify the specific uncertainty. Use the same technical source identity as companion engineering documentation, but write for users rather than copying an architecture explanation.
 
+Add a `diagram` block when a task's choices, handoffs or recovery paths are clearer visually. Keep labels in the user's vocabulary, provide an explanatory description, and retain actionable instructions in the surrounding steps.
+
 See `../examples/user-guide.json` for a structural example. Steps are plain text; references and cross-document navigation use link blocks or `related`.
