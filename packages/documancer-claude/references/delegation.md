@@ -4,14 +4,14 @@ The four optional Markdown subagents are packaged in `subagents/`. Install them 
 
 Claude Code lists every file in `.claude/agents/` as a delegation target for the main agent, including in sessions that never load this skill. The descriptions therefore limit each role to a brief assigned by the Documancer parent. They intentionally omit "use proactively."
 
-| Agent | Tools | Use |
-| --- | --- | --- |
-| `documancer-map` | Read, Glob, Grep | Gather verified implementation facts for one bounded subsystem. |
-| `documancer-analyze` | Read, Glob, Grep | Resolve difficult cross-module behavior, conflicting contracts, or UAT journeys. |
-| `documancer-write` | Read, Write, Edit, Glob, Grep | Draft one JSON document from a verified evidence packet and agreed outline. |
-| `documancer-review` | Read, Glob, Grep | Check one substantial draft against its evidence for unsupported claims and acceptance errors. |
+| Agent | Model / effort | Tools | Use |
+| --- | --- | --- | --- |
+| `documancer-map` | `sonnet` / high | Read, Glob, Grep | Gather verified implementation facts for one bounded subsystem. |
+| `documancer-analyze` | `opus` / high | Read, Glob, Grep | Resolve difficult cross-module behavior, conflicting contracts, or UAT journeys. |
+| `documancer-write` | `sonnet` / medium | Read, Write, Edit, Glob, Grep | Draft one JSON document from a verified evidence packet and agreed outline. |
+| `documancer-review` | `sonnet` / high | Read, Glob, Grep | Check one substantial draft against its evidence for unsupported claims and acceptance errors. |
 
-The profiles set `model: inherit`, so each run uses the parent's model. There is no cost or reasoning-effort guarantee. A project owner may set `model` (for example `sonnet`) on an installed copy after weighing quality against cost. Mapping, analysis, and review have no Write, Edit or Bash tools, so they cannot change files or run commands. That also means they cannot run `git` for revision identity; the parent supplies it in the brief. The writer is not path-sandboxed and may edit only its assigned JSON path.
+Only analysis defaults to Opus because its mistakes carry into every later step. Citation accuracy keeps mapping and review at high effort, and drafting from verified facts needs less. These are defaults, not cost guarantees. An alias in the parent's model family runs on the parent's exact model, an organization's `availableModels` list can substitute another model, and a parent may override the model for one consequential task. A project owner may change `model` or `effort` on an installed copy; `/tasks` shows the model each run used. Mapping, analysis, and review have no Write, Edit or Bash tools, so they cannot change files or run commands. That also means they cannot run `git` for revision identity; the parent supplies it in the brief. The writer is not path-sandboxed and may edit only its assigned JSON path.
 
 Claude Code allows subagents to spawn subagents by default, but each profile lists an explicit `tools` allowlist without the Agent tool, so none of these roles can delegate further. Do not add Agent to an installed copy. The parent still owns the boundary.
 

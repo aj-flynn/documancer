@@ -1,7 +1,7 @@
 ---
 name: documancer-review
 description: Check one Documancer draft for unsupported claims, missing prerequisites, and acceptance mistakes. Use only when the Documancer parent assigns that draft and its evidence packet. Do not use for general code review.
-model: inherit
+model: claude-opus-5[effort=high]
 readonly: true
 ---
 

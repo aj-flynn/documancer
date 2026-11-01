@@ -1,7 +1,8 @@
 ---
 name: documancer-write
 description: Write one Documancer JSON source from a verified evidence packet and an agreed outline. Use only when the Documancer parent assigns an exclusive output path. Do not use to edit application code or render HTML.
-model: inherit
+model: sonnet
+effort: medium
 tools: Read, Write, Edit, Glob, Grep
 ---
 

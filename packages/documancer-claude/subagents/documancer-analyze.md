@@ -1,7 +1,8 @@
 ---
 name: documancer-analyze
 description: Resolve one conflicting contract, cross-module behavior, or UAT journey for a Documancer document. Use only when the Documancer parent assigns that question with an evidence packet. Do not use for general debugging or implementation.
-model: inherit
+model: opus
+effort: high
 tools: Read, Glob, Grep
 ---
 

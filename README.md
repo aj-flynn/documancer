@@ -28,7 +28,7 @@ Installs `.claude/skills/documancer/`. Start a fresh Claude Code session in the 
 /documancer Create a technical reference for this project.
 ```
 
-Optional Markdown subagents inherit the invoking model. Mapping, analysis, and review get read-only tools (Read, Glob, Grep); the writer adds Write and Edit; none can delegate further. Nothing is installed globally. To use Documancer in every project, copy the package into `~/.claude/skills/documancer/` yourself. See [Claude Code delegation](packages/documancer-claude/references/delegation.md).
+Optional Markdown subagents use `sonnet`/high for mapping and review, `opus`/high for analysis, and `sonnet`/medium for drafting from verified facts. Mapping, analysis, and review get read-only tools (Read, Glob, Grep); the writer adds Write and Edit; none can delegate further. Nothing is installed globally. To use Documancer in every project, copy the package into `~/.claude/skills/documancer/` yourself. See [Claude Code delegation](packages/documancer-claude/references/delegation.md).
 
 ### Codex
 
@@ -70,7 +70,7 @@ Installs `.cursor/skills/documancer/`. Open a fresh Agent chat and select or typ
 /documancer Create a human UAT plan for the account settings workflow.
 ```
 
-Uses native Agent Skills rather than an always-on rule. `/documancer` applies to one message; Alt+Enter (Option+Enter on macOS) pins it as a Custom Mode. Optional Markdown subagents are Task-tool profiles with `model: inherit`. Their descriptions limit them to an assigned Documancer brief, so Cursor does not treat them as general-purpose agents. Mapping, analysis, and review use `readonly: true`. See [Cursor delegation](packages/documancer-cursor/references/delegation.md).
+Uses native Agent Skills rather than an always-on rule. `/documancer` applies to one message; Alt+Enter (Option+Enter on macOS) pins it as a Custom Mode. Optional Markdown subagents are Task-tool profiles that use `composer-2.5[]` for mapping and drafting, `gpt-5.6-sol` for analysis, and `claude-opus-5[effort=high]` for review. Cursor falls back to a compatible model when one is unavailable. Their descriptions limit them to an assigned Documancer brief, so Cursor does not treat them as general-purpose agents. Mapping, analysis, and review use `readonly: true`. See [Cursor delegation](packages/documancer-cursor/references/delegation.md).
 
 ### Options and maintenance
 

@@ -1,7 +1,7 @@
 ---
 name: documancer-map
 description: Gather verified implementation evidence for one Documancer documentation scope. Use only when the Documancer parent assigns a bounded mapping brief. Do not use for general exploration, implementation, or code review.
-model: inherit
+model: composer-2.5[]
 readonly: true
 ---
 

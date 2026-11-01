@@ -4,14 +4,14 @@ The four optional Markdown subagents are packaged in `subagents/`. Install them 
 
 Cursor puts every file in `.cursor/agents/` on the Task tool for Agent sessions in that project, including sessions that never load this skill. The descriptions therefore limit each role to a brief assigned by the Documancer parent. They intentionally omit "use proactively."
 
-| Agent | Use |
-| --- | --- |
-| `documancer-map` | Gather verified implementation facts for one bounded subsystem. |
-| `documancer-analyze` | Resolve difficult cross-module behavior, conflicting contracts, or UAT journeys. |
-| `documancer-write` | Draft one JSON document from a verified evidence packet and agreed outline. |
-| `documancer-review` | Check one substantial draft against its evidence for unsupported claims and acceptance errors. |
+| Agent | Model | Use |
+| --- | --- | --- |
+| `documancer-map` | `composer-2.5[]` | Gather verified implementation facts for one bounded subsystem. |
+| `documancer-analyze` | `gpt-5.6-sol` | Resolve difficult cross-module behavior, conflicting contracts, or UAT journeys. |
+| `documancer-write` | `composer-2.5[]` | Draft one JSON document from a verified evidence packet and agreed outline. |
+| `documancer-review` | `claude-opus-5[effort=high]` | Check one substantial draft against its evidence for unsupported claims and acceptance errors. |
 
-The profiles set `model: inherit` and leave `is_background` unset. Each run uses the parent model and returns before the parent continues. There is no cost or reasoning-effort guarantee. A project owner may set a supported model id, including Cursor's `model[effort=…]` form, on an installed copy after checking that account's model list. Leave Codex model ids out of these files.
+The profiles leave `is_background` unset, so each run returns before the parent continues. Composer's standard variant handles bounded discovery and drafting from verified facts. Analysis and review use stronger models, and review deliberately uses a different model family from the writer for a more independent check. These are defaults, not cost guarantees. Cursor falls back to a compatible model when an admin blocks the configured one, it requires Max Mode that is off, or it is not on the plan; legacy request-based plans without Max Mode run subagents on Composer. A project owner may set another Cursor model id, including the `model[effort=…]` form, or `inherit` on an installed copy after checking that account's model list.
 
 Launch a role with the Task tool. The subagent type is `documancer-map`, `documancer-analyze`, `documancer-write`, or `documancer-review`. A user can also ask for that role with `/documancer-map` and the matching names. Subagents start from a clean context: they do not see this skill or the parent conversation. Put the brief in the Task prompt: request, project rules, assigned boundary, source identity, relevant evidence paths, and expected output. Include the mode-reference and data-contract paths when the role must read them.
 
