@@ -11,6 +11,7 @@ const editions = [
   { env: 'codex', pkg: 'documancer', skill: '.agents', agents: '.codex', ext: 'toml' },
   { env: 'opencode', pkg: 'documancer-opencode', skill: '.opencode', agents: '.opencode', ext: 'md' },
   { env: 'cursor', pkg: 'documancer-cursor', skill: '.cursor', agents: '.cursor', ext: 'md' },
+  { env: 'claude', pkg: 'documancer-claude', skill: '.claude', agents: '.claude', ext: 'md' },
 ];
 const run = (...args) => spawnSync(process.execPath, args, { cwd: root, encoding: 'utf8' });
 const ok = result => assert.equal(result.status, 0, result.stderr || result.stdout);

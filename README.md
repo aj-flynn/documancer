@@ -1,6 +1,6 @@
 # Documancer
 
-Documentation skills for **Codex, OpenCode, and Cursor**. Create editable JSON and polished, self-contained HTML that opens offline. Installation and rendering require **Node.js 20+**; no npm dependencies, server, or frontend build is needed.
+Documentation skills for **Claude Code, Codex, OpenCode, and Cursor**. Create editable JSON and polished, self-contained HTML that opens offline. Installation and rendering require **Node.js 20+**; no npm dependencies, server, or frontend build is needed.
 
 | Mode | Output |
 | --- | --- |
@@ -10,11 +10,25 @@ Documentation skills for **Codex, OpenCode, and Cursor**. Create editable JSON a
 
 All modes share the Forest dark and cream light design, embedded fonts, search, and navigation. UAT starts **Untested**. Results and notes are session-only and **lost on reload**; Generate summary produces and copies the current results, with manual selection if clipboard access fails. Automated evidence is separate from human acceptance.
 
-All three editions include diagrams when they help explain code or processes. Structured JSON nodes and edges render to static, theme-aware SVG inside the HTML, with wrapped labels, directed arrows and a text alternative. No Mermaid runtime, external assets or extra dependencies are required. Diagrams scroll horizontally when needed to preserve readability. Click a diagram or select Expand diagram for a full-window view; Close diagram or Escape returns to the document. See the [diagram data contract](packages/documancer/references/data-contract.md#diagrams) and the included examples.
+All four editions include diagrams when they help explain code or processes. Structured JSON nodes and edges render to static, theme-aware SVG inside the HTML, with wrapped labels, directed arrows and a text alternative. No Mermaid runtime, external assets or extra dependencies are required. Diagrams scroll horizontally when needed to preserve readability. Click a diagram or select Expand diagram for a full-window view; Close diagram or Escape returns to the document. See the [diagram data contract](packages/documancer/references/data-contract.md#diagrams) and the included examples.
 
 ## Install
 
 Download or clone this repository and run the appropriate command from its root. Replace `/path/to/project` with an **existing** project directory; quote paths with spaces. Commands work in PowerShell, macOS, and Linux shells.
+
+### Claude Code
+
+```sh
+node install.mjs claude /path/to/project
+```
+
+Installs `.claude/skills/documancer/`. Start a fresh Claude Code session in the target project. Claude loads the skill when a request matches, or you can invoke it directly:
+
+```text
+/documancer Create a technical reference for this project.
+```
+
+Optional Markdown subagents inherit the invoking model. Mapping, analysis, and review get read-only tools (Read, Glob, Grep); the writer adds Write and Edit; none can delegate further. Nothing is installed globally. To use Documancer in every project, copy the package into `~/.claude/skills/documancer/` yourself. See [Claude Code delegation](packages/documancer-claude/references/delegation.md).
 
 ### Codex
 
@@ -63,27 +77,28 @@ Uses native Agent Skills rather than an always-on rule. `/documancer` applies to
 For any environment, add `--check` to preview without writing, or `--agents` to install four optional specialists:
 
 ```sh
-node install.mjs cursor /path/to/project --agents --check
-node install.mjs cursor /path/to/project --agents
+node install.mjs claude /path/to/project --agents --check
+node install.mjs claude /path/to/project --agents
 ```
 
 | Environment | Skill destination | Optional agent destination |
 | --- | --- | --- |
+| Claude Code | `.claude/skills/documancer/` | `.claude/agents/` |
 | Codex | `.agents/skills/documancer/` | `.codex/agents/` |
 | OpenCode | `.opencode/skills/documancer/` | `.opencode/agents/` |
 | Cursor | `.cursor/skills/documancer/` | `.cursor/agents/` |
 
-Agents are `documancer-map`, `documancer-analyze`, `documancer-write`, and `documancer-review`. Use them selectively for substantial discovery or independent drafts. Codex and OpenCode start with at most two concurrent documentation agents. Cursor launches every ready documentation task in one turn and holds a task until its packet, outline, or draft exists. Small edits stay with the parent; deterministic rendering needs no agent. The skill works without custom agents.
+Agents are `documancer-map`, `documancer-analyze`, `documancer-write`, and `documancer-review`. Use them selectively for substantial discovery or independent drafts. Codex and OpenCode start with at most two concurrent documentation agents. Claude Code and Cursor launch every ready documentation task in one turn and hold a task until its packet, outline, or draft exists. Small edits stay with the parent; deterministic rendering needs no agent. The skill works without custom agents.
 
 To add agents later, use the chosen edition's helper:
 
 ```sh
-node packages/documancer-cursor/scripts/install-agents.mjs /path/to/project
+node packages/documancer-claude/scripts/install-agents.mjs /path/to/project
 ```
 
 Installers preserve project configuration and refuse existing skill folders, legacy `forest-documentation` installations, and conflicting customized profiles. Matching agent files may be reused. For upgrades, back up the old skill **outside discovery directories**, compare customizations, remove the old copy after review, and reinstall. Merge customized agents explicitly. To uninstall, remove only the installed skill and optional `documancer-*` profiles; keep authored JSON and HTML.
 
-**Multiple editors on one project:** install one edition. All three discover `.agents/skills/`, so a single Codex installation provides the shared authoring workflow. Its Codex agents only run in Codex; other editors can work in the parent. For native agents in another editor, install only that edition's agent profiles and direct the parent to those roles. Avoid multiple same-name skills in native and shared discovery directories.
+**Multiple editors on one project:** install one edition where possible. Codex, OpenCode and Cursor discover `.agents/skills/`, so a single Codex installation provides the shared authoring workflow for those three. Its Codex agents only run in Codex; other editors can work in the parent. For native agents in OpenCode or Cursor, install only that edition's agent profiles and direct the parent to those roles. Claude Code does not discover `.agents/skills/`, so a team that also uses it needs the Claude Code edition in `.claude/skills/` as well. Avoid multiple same-name skills in native and shared discovery directories that one editor can see.
 
 For manual installation, copy an entire edition package into its skill destination, naming the folder `documancer`. Each package includes its own `install.mjs` and all resources, so it can be transferred independently. Automated installation is project-local; no global settings are changed.
 
@@ -135,6 +150,7 @@ Set manifests explicitly list the documents being delivered. Technical and user 
 | `packages/documancer/` | Codex edition and canonical shared renderer, assets, examples, mode references, and renderer tests. |
 | `packages/documancer-opencode/` | OpenCode-specific skill, installer, and agent guidance. |
 | `packages/documancer-cursor/` | Cursor-specific skill, installer, and agent guidance. |
+| `packages/documancer-claude/` | Claude Code-specific skill, installer, and agent guidance. |
 | `install.mjs` | Cross-platform environment selector. |
 | `scripts/` | Shared-resource synchronization and installer integration tests. |
 
@@ -146,8 +162,8 @@ npm run check
 npm test
 ```
 
-No dependency installation is necessary. To build a local transfer archive, use `npm pack ./packages/documancer` (or the OpenCode/Cursor package path), extract it, then run its `install.mjs`. Packages are private; this does not publish them.
+No dependency installation is necessary. To build a local transfer archive, use `npm pack ./packages/documancer` (or another edition's package path), extract it, then run its `install.mjs`. Packages are private; this does not publish them.
 
-Extracted from Flynn Technology's Documancer 1.3.0 and OpenCode 1.1.0 packages on October 4, 2026; maintained here as 1.4.0. The original checkout was retained. Source Sans 3 licensing remains in each edition's `assets/OFL.txt` and generated HTML.
+Source Sans 3 licensing remains in each edition's `assets/OFL.txt` and generated HTML.
 
-Installation formats checked against official [Codex skills](https://learn.chatgpt.com/docs/build-skills), [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents), [OpenCode skills](https://opencode.ai/docs/skills/), [OpenCode agents](https://opencode.ai/docs/agents/), [Cursor skills](https://cursor.com/docs/skills), and [Cursor subagents](https://cursor.com/docs/subagents) documentation on October 4, 2026. Agent and model availability depends on the installed client and account.
+Installation formats checked against official [Codex skills](https://learn.chatgpt.com/docs/build-skills), [Codex subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents), [OpenCode skills](https://opencode.ai/docs/skills/), [OpenCode agents](https://opencode.ai/docs/agents/), [Cursor skills](https://cursor.com/docs/skills), and [Cursor subagents](https://cursor.com/docs/subagents) documentation on October 4, 2026. The Claude Code edition was checked against [Claude Code skills](https://code.claude.com/docs/en/skills) and [subagents](https://code.claude.com/docs/en/sub-agents) documentation on November 1, 2026. Agent and model availability depends on the installed client and account.

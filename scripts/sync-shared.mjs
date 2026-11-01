@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const packagesRoot = fileURLToPath(new URL('../packages/', import.meta.url));
 const canonical = join(packagesRoot, 'documancer');
-const otherEditions = ['documancer-opencode', 'documancer-cursor'];
+const otherEditions = ['documancer-opencode', 'documancer-cursor', 'documancer-claude'];
 
 // Directories are listed recursively; entries with an extension are single files.
 const SHARED = [
