@@ -15,4 +15,4 @@ Run from this package directory; the target project must exist. Omit `--agents` 
 
 Read [INSTALL.md](INSTALL.md), [USAGE.md](USAGE.md), and [SKILL.md](SKILL.md) for installation, authoring and the agent workflow. Optional roles and model behavior are in [references/delegation.md](references/delegation.md).
 
-Maintained in the standalone Documancer repository; no original flynn-technology checkout is needed. Font attribution remains in `assets/OFL.txt` and embedded exports. Set `brand.name` to your actual publisher.
+Font attribution remains in `assets/OFL.txt` and embedded exports. Set `brand.name` to your actual publisher.

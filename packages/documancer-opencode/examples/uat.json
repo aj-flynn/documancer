@@ -7,7 +7,7 @@
     "id": "DOCUMANCER-UAT",
     "version": "1.0",
     "date": "2026-09-19",
-    "source": "documancer package 1.4.0 example",
+    "source": "documancer package 1.5.0 example",
     "readiness": "Render all three example files together. Human acceptance has not been recorded."
   },
   "overview": [
