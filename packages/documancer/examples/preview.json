@@ -1,0 +1,535 @@
+{
+  "schemaVersion": 2,
+  "mode": "preview",
+  "title": "Let people pause notification email",
+  "lead": "Decide whether pausing email should end by itself, and whether the screens and rules below are what you want built.",
+  "identity": {
+    "id": "EXAMPLE-12-PREVIEW",
+    "version": "2",
+    "date": "2026-11-15",
+    "source": "Illustrative example; main 4f2a9c1"
+  },
+  "generatedBy": {
+    "agent": "Illustrative agent",
+    "model": "illustrative-model"
+  },
+  "context": {
+    "summary": "Illustrative: a request to let a person stop all notification email for a while without changing each setting.",
+    "links": [
+      {
+        "kind": "Ticket",
+        "label": "#12 Pause notification email",
+        "href": "https://example.com/tickets/12"
+      }
+    ]
+  },
+  "ticket": {
+    "repository": "example/example-app",
+    "number": 12,
+    "version": 2,
+    "origin": "founder",
+    "kind": "change",
+    "builtAt": {
+      "commit": "4f2a9c1d7e3b",
+      "date": "2026-11-15"
+    },
+    "surfaces": [
+      "notification-settings",
+      "email-delivery"
+    ]
+  },
+  "overview": [
+    {
+      "type": "paragraph",
+      "text": "You asked for one control that stops every notification email. This preview shows that control in two forms, the rule that decides who gets email, the stored data it needs, and who may change it. Billing and security email is out of scope and keeps being sent."
+    }
+  ],
+  "problem": {
+    "symptom": "A person going on leave has to switch off each kind of email one by one, and switch each back on afterwards. Most forget, and stay unsubscribed.",
+    "evidence": [
+      {
+        "type": "paragraph",
+        "text": "The notification screen has one switch per kind of email and nothing that covers all of them."
+      },
+      {
+        "type": "image",
+        "file": "preview/notifications-now.png",
+        "alt": "The Notifications screen today: an Email panel with two switches, Comments on my documents and Weekly summary, both on.",
+        "caption": "The notification screen today"
+      }
+    ],
+    "impact": "People who switched everything off before leave miss comments addressed to them for weeks after they return.",
+    "source": "Raised in a support review of the last quarter's notification complaints."
+  },
+  "findings": [
+    {
+      "title": "The weekly summary is sent by a different job",
+      "text": "The request names one place where email is sent. The weekly summary is sent by a separate scheduled job, so a pause that only covered the first place would still send the summary.",
+      "basis": "checked"
+    },
+    {
+      "title": "Paused email is probably not wanted later",
+      "text": "The request does not say whether email held back during a pause should be sent when the pause ends. This preview assumes it is dropped.",
+      "basis": "inferred"
+    }
+  ],
+  "impact": {
+    "storedData": {
+      "answer": "yes",
+      "note": "One new value per person: the date the pause ends."
+    },
+    "access": {
+      "answer": "yes",
+      "note": "Workspace owners can end another person's pause."
+    },
+    "retainedHistory": {
+      "answer": "no"
+    },
+    "qaReset": {
+      "answer": "no"
+    },
+    "reversible": {
+      "answer": "yes",
+      "note": "The new value can be removed; no existing data changes."
+    }
+  },
+  "questions": [
+    {
+      "id": "q1",
+      "title": "Should a pause end by itself?",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "A pause that never ends is simpler to build and repeats today's problem in a milder form: one switch to remember instead of several."
+        }
+      ],
+      "options": [
+        {
+          "id": "1a",
+          "label": "Stays paused until switched off",
+          "detail": "One switch. The person must remember to turn it off."
+        },
+        {
+          "id": "1b",
+          "label": "Ends on a date the person picks",
+          "detail": "One switch and a date. Email starts again without anyone doing anything."
+        }
+      ],
+      "recommended": "1b",
+      "reason": "Forgetting to switch email back on is the problem being fixed.",
+      "discussion": [
+        {
+          "from": "founder",
+          "text": "Could a pause be longer than a month?"
+        },
+        {
+          "from": "agent",
+          "text": "Yes. Nothing limits the date; the preview shows three shortcuts and the built screen would also allow any date."
+        }
+      ]
+    }
+  ],
+  "views": [
+    {
+      "id": "s1",
+      "kind": "screen",
+      "title": "Notification settings",
+      "ask": "Is this the screen you want?",
+      "basis": "screenshot",
+      "files": [
+        "app/settings/notifications.tsx"
+      ],
+      "areas": [],
+      "now": {
+        "image": "preview/notifications-now.png",
+        "alt": "The Notifications screen today: an Email panel with two switches, Comments on my documents and Weekly summary, both on."
+      },
+      "proposed": {
+        "prototype": "preview/notifications-proposed.html"
+      },
+      "changes": [
+        {
+          "id": "pause",
+          "label": "A new “Pause all email” switch",
+          "detail": "Under the two existing switches."
+        },
+        {
+          "id": "until",
+          "label": "A date the pause ends",
+          "detail": "The person picks it, or uses a shortcut.",
+          "when": "q1=1b"
+        },
+        {
+          "id": "hint",
+          "label": "A line saying what pausing does",
+          "detail": "Paused email is not sent later."
+        }
+      ],
+      "unchanged": [
+        "The two existing switches do not change."
+      ]
+    },
+    {
+      "id": "e1",
+      "kind": "examples",
+      "title": "Who gets email",
+      "ask": "Should a paused person stop getting comment and weekly summary email?",
+      "basis": "read",
+      "files": [
+        "server/email/send.ts",
+        "server/jobs/weekly-summary.ts"
+      ],
+      "columns": [
+        "Kind of email",
+        "Pause"
+      ],
+      "rows": [
+        {
+          "id": "comment-no-pause",
+          "inputs": [
+            "Comment",
+            "None"
+          ],
+          "now": "Sent",
+          "proposed": "Sent",
+          "changed": false
+        },
+        {
+          "id": "comment-paused",
+          "inputs": [
+            "Comment",
+            "Active"
+          ],
+          "now": "Sent",
+          "proposed": "Not sent, and not sent later",
+          "changed": true
+        },
+        {
+          "id": "summary-paused",
+          "inputs": [
+            "Weekly summary",
+            "Active"
+          ],
+          "now": "Sent",
+          "proposed": "Not sent",
+          "changed": true
+        },
+        {
+          "id": "billing-paused",
+          "inputs": [
+            "Billing or security",
+            "Active"
+          ],
+          "now": "Sent",
+          "proposed": "Sent",
+          "changed": false
+        }
+      ],
+      "changes": [
+        {
+          "id": "comment",
+          "label": "Comment email while the person is paused",
+          "now": "Sent",
+          "proposed": "Not sent, and not sent later"
+        },
+        {
+          "id": "summary",
+          "label": "Weekly summary while the person is paused",
+          "now": "Sent",
+          "proposed": "Not sent"
+        }
+      ],
+      "unchanged": [
+        "Comment email when there is no pause is still sent.",
+        "Billing and security email is still sent during a pause."
+      ]
+    },
+    {
+      "id": "d1",
+      "kind": "data",
+      "title": "Stored pause",
+      "ask": "OK to store one new value for each person: the date their pause ends?",
+      "basis": "read",
+      "files": [
+        "db/schema/members.sql"
+      ],
+      "areas": [
+        "schema"
+      ],
+      "tables": [
+        {
+          "name": "members",
+          "change": "changed",
+          "columns": [
+            {
+              "name": "email",
+              "type": "text",
+              "nullable": false,
+              "change": "unchanged"
+            },
+            {
+              "name": "email_paused_until",
+              "type": "date",
+              "nullable": true,
+              "change": "added"
+            }
+          ]
+        }
+      ],
+      "existingRows": "Every existing member gets an empty value, which means not paused. Nothing is rewritten.",
+      "changes": [
+        {
+          "id": "until",
+          "label": "New on each member: the date email starts again",
+          "detail": "Empty means not paused."
+        }
+      ],
+      "unchanged": [
+        "Everything else stored about a member."
+      ]
+    },
+    {
+      "id": "a1",
+      "kind": "access",
+      "title": "Who can pause and resume",
+      "ask": "Is it right that everyone can pause their own email, and owners can end someone else’s pause?",
+      "basis": "inferred",
+      "areas": [
+        "authorization"
+      ],
+      "actors": [
+        "Member",
+        "Workspace owner"
+      ],
+      "actions": [
+        "Pause own email",
+        "End someone else's pause"
+      ],
+      "cells": [
+        {
+          "actor": "Member",
+          "action": "Pause own email",
+          "now": "no",
+          "proposed": "yes"
+        },
+        {
+          "actor": "Member",
+          "action": "End someone else's pause",
+          "now": "no",
+          "proposed": "no"
+        },
+        {
+          "actor": "Workspace owner",
+          "action": "Pause own email",
+          "now": "no",
+          "proposed": "yes"
+        },
+        {
+          "actor": "Workspace owner",
+          "action": "End someone else's pause",
+          "now": "no",
+          "proposed": "yes",
+          "condition": "Only for members of their own workspace."
+        }
+      ],
+      "changes": [
+        {
+          "id": "own",
+          "label": "A member or owner pausing their own email",
+          "now": "Cannot",
+          "proposed": "Can"
+        },
+        {
+          "id": "others",
+          "label": "A workspace owner ending someone else’s pause",
+          "now": "Cannot",
+          "proposed": "Can, in their own workspace only"
+        }
+      ],
+      "unchanged": [
+        "A member still cannot end someone else’s pause."
+      ]
+    },
+    {
+      "id": "f1",
+      "kind": "flow",
+      "title": "Sending one email",
+      "ask": "Is this the right order of checks before an email goes out?",
+      "basis": "read",
+      "diagram": {
+        "type": "diagram",
+        "caption": "Sending one notification email",
+        "description": "A new check runs before the existing per-kind setting. A paused person gets nothing, and the email is dropped rather than held.",
+        "nodes": [
+          {
+            "id": "event",
+            "label": "Something happens",
+            "row": 0,
+            "column": 0
+          },
+          {
+            "id": "paused",
+            "label": "Is the person paused?",
+            "row": 1,
+            "column": 0,
+            "change": "added"
+          },
+          {
+            "id": "setting",
+            "label": "Is this kind switched on?",
+            "row": 2,
+            "column": 0
+          },
+          {
+            "id": "send",
+            "label": "Send email",
+            "row": 3,
+            "column": 0
+          },
+          {
+            "id": "drop",
+            "label": "Drop the email",
+            "row": 1,
+            "column": 1,
+            "change": "added"
+          }
+        ],
+        "edges": [
+          {
+            "from": "event",
+            "to": "paused"
+          },
+          {
+            "from": "paused",
+            "to": "setting",
+            "label": "No"
+          },
+          {
+            "from": "paused",
+            "to": "drop",
+            "label": "Yes",
+            "change": "added"
+          },
+          {
+            "from": "setting",
+            "to": "send",
+            "label": "Yes"
+          }
+        ]
+      },
+      "changes": [
+        {
+          "id": "check",
+          "label": "A new first check: is the person paused?",
+          "detail": "It runs before the existing check for each kind of email."
+        },
+        {
+          "id": "drop",
+          "label": "A new outcome: the email is dropped",
+          "detail": "For a paused person. It is not held for later."
+        }
+      ],
+      "unchanged": [
+        "The existing check, “is this kind switched on?”, still runs afterwards."
+      ]
+    },
+    {
+      "id": "c1",
+      "kind": "contract",
+      "title": "Settings response",
+      "ask": "OK for the settings sent to the web and mobile apps to gain one field?",
+      "basis": "read",
+      "name": "GET /api/me/notifications",
+      "consumers": [
+        "Web app",
+        "Mobile app"
+      ],
+      "now": {
+        "type": "code",
+        "language": "JSON",
+        "text": "{\n  \"comments\": true,\n  \"weeklySummary\": true\n}"
+      },
+      "proposed": {
+        "type": "code",
+        "language": "JSON",
+        "text": "{\n  \"comments\": true,\n  \"weeklySummary\": true,\n  \"pausedUntil\": \"2026-12-01\"\n}"
+      },
+      "changes": [
+        {
+          "id": "field",
+          "label": "One new field: the date the pause ends",
+          "detail": "Empty when there is no pause."
+        }
+      ],
+      "unchanged": [
+        "Older mobile versions ignore fields they do not know, so they keep working."
+      ]
+    },
+    {
+      "id": "o1",
+      "kind": "operations",
+      "title": "Rollout",
+      "ask": "Is this rollout plan OK?",
+      "basis": "inferred",
+      "blocks": [
+        {
+          "type": "paragraph",
+          "text": "Both steps can be released on a normal working day. Nothing needs to be switched off while they go out."
+        }
+      ],
+      "changes": [
+        {
+          "id": "order",
+          "label": "The new stored value is added first",
+          "detail": "Before the code that reads it is released."
+        },
+        {
+          "id": "schedule",
+          "label": "Nothing new runs on a schedule",
+          "detail": "A pause ends because its date has passed."
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "kind": "screen",
+      "title": "Email footer",
+      "basis": "screenshot",
+      "informational": true,
+      "now": {
+        "image": "preview/notifications-now.png",
+        "alt": "Stand-in image for the footer of a notification email, which links to the notification settings."
+      },
+      "notes": [
+        {
+          "type": "paragraph",
+          "text": "The footer links to notification settings and looks affected. It does not change: the link already opens the screen where the pause will be."
+        }
+      ]
+    }
+  ],
+  "work": [
+    {
+      "title": "Store and honour a pause",
+      "outcome": "A paused person gets no comment or summary email; billing and security email is unaffected.",
+      "size": "medium",
+      "touches": [
+        "schema"
+      ]
+    },
+    {
+      "title": "Pause control on the notification screen",
+      "outcome": "A person can pause email and see when it starts again.",
+      "size": "small"
+    },
+    {
+      "title": "Owners can end a pause",
+      "outcome": "A workspace owner can end a member's pause from the member list.",
+      "size": "small",
+      "touches": [
+        "authorization"
+      ]
+    }
+  ],
+  "leaveAsIs": "People keep switching each kind of email off and on by hand, and some stay unsubscribed after leave."
+}

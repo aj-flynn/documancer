@@ -9,6 +9,10 @@ function text(value, path, limit) {
   if (typeof value !== 'string' || !value.trim()) fail(path,'expected a nonempty string');
   if (limit && [...value].length > limit) fail(path,`must not exceed ${limit} characters`);
 }
+// An optional change mark on a node or edge shows what a proposal adds, removes or alters.
+const changes=['added','removed','changed'];
+function change(value, path) { if (value !== undefined && !changes.includes(value)) fail(path+'.change','expected added, removed or changed'); }
+const edgeText = e => [e.label, e.change && `(${e.change})`].filter(Boolean).join(' ');
 export function validateDiagram(b, path) {
   fields(b,['type','caption','description','nodes','edges'],path);
   text(b.caption,path+'.caption');text(b.description,path+'.description');
@@ -16,7 +20,7 @@ export function validateDiagram(b, path) {
   if (!Array.isArray(b.edges) || b.edges.length > 80) fail(path+'.edges','expected 0–80 edges');
   const ids=new Set(), cells=new Set(), pairs=new Set();
   b.nodes.forEach((n,i)=>{
-    const p=`${path}.nodes[${i}]`;fields(n,['id','label','row','column'],p);
+    const p=`${path}.nodes[${i}]`;fields(n,['id','label','row','column','change'],p);change(n.change,p);
     text(n.id,p+'.id');if (!/^[a-z][a-z0-9-]*$/.test(n.id)) fail(p+'.id','expected a lowercase slug');
     if (ids.has(n.id)) fail(p+'.id','duplicate node ID');ids.add(n.id);
     text(n.label,p+'.label',180);
@@ -24,7 +28,7 @@ export function validateDiagram(b, path) {
     const cell=`${n.row},${n.column}`;if(cells.has(cell))fail(p,'two nodes occupy the same grid cell');cells.add(cell);
   });
   b.edges.forEach((e,i)=>{
-    const p=`${path}.edges[${i}]`;fields(e,['from','to','label'],p);
+    const p=`${path}.edges[${i}]`;fields(e,['from','to','label','change'],p);change(e.change,p);
     for(const key of ['from','to'])if(!ids.has(e[key]))fail(p+'.'+key,'unknown node ID');
     if(e.from===e.to)fail(p,'self edges are not supported; describe the repeat in text or use a separate step');
     const pair=`${e.from}:${e.to}`;if(pairs.has(pair))fail(p,'duplicate directed edge');pairs.add(pair);
@@ -70,7 +74,7 @@ function simplify(points){return points.filter((p,i)=>!i||i===points.length-1||!
 function textSVG(lines,x,y,lineHeight,css){return `<text class="${css}" text-anchor="middle">${lines.map((line,i)=>`<tspan x="${x}" y="${y+(i-(lines.length-1)/2)*lineHeight}">${escape(line)}</tspan>`).join('')}</text>`;}
 export function diagramHTML(b, id) {
   const nodeWidth=200, gapX=144, margin=112;
-  const gapY=Math.max(112,...b.edges.map(e=>e.label?wrap(e.label,8).length*18+48:0));
+  const gapY=Math.max(112,...b.edges.map(e=>edgeText(e)?wrap(edgeText(e),8).length*18+48:0));
   const nodes=b.nodes.map(n=>({...n,lines:wrap(n.label,9.5)}));
   const columns=Math.max(...nodes.map(n=>n.column))+1, rows=Math.max(...nodes.map(n=>n.row))+1;
   const heights=Array.from({length:rows},(_,r)=>Math.max(92,...nodes.filter(n=>n.row===r).map(n=>n.lines.length*22+36)));
@@ -91,17 +95,17 @@ export function diagramHTML(b, id) {
       if(p[0]===q[0])p[1]+=Math.sign(q[1]-p[1])*heights[node.row]/2;
       else p[0]+=Math.sign(q[0]-p[0])*nodeWidth/2;
     }
-    paths.push(`<path class="diagram-edge" d="M ${points.map(p=>p.join(' ')).join(' L ')}" marker-end="url(#${id}-arrow)"/>`);
-    if(edge.label){
+    paths.push(`<path class="diagram-edge${edge.change?' diagram-'+edge.change:''}" d="M ${points.map(p=>p.join(' ')).join(' L ')}" marker-end="url(#${id}-arrow${edge.change?'-'+edge.change:''})"/>`);
+    if(edgeText(edge)){
       const candidates=points.slice(1).map((p,i)=>({a:points[i],b:p,length:Math.abs(p[0]-points[i][0])+Math.abs(p[1]-points[i][1])}));
       const {a,b:point}=candidates.sort((a,b)=>b.length-a.length)[0];
-      const lines=wrap(edge.label,8),h=lines.length*18+12;
+      const lines=wrap(edgeText(edge),8),h=lines.length*18+12;
       const w=Math.ceil(Math.max(...lines.map(line=>[...segments.segment(line)].reduce((sum,s)=>sum+units(s.segment)*14,0))))+20;
       const x=Math.max(w/2+2,Math.min(width-w/2-2,(a[0]+point[0])/2)),y=(a[1]+point[1])/2;
       labels.push(`<g><rect class="diagram-label-bg" x="${x-w/2}" y="${y-h/2}" width="${w}" height="${h}" rx="4"/>${textSVG(lines,x,y+5,18,'diagram-edge-label')}</g>`);
     }
   }
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" class="diagram-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title ${id}-desc"><title id="${id}-title">${escape(b.caption)}</title><desc id="${id}-desc">${escape(b.description)}</desc><defs><marker id="${id}-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" class="diagram-arrow"/></marker></defs>${paths.join('')}${nodes.map(n=>`<g class="diagram-node"><rect x="${xs[n.column*2+1]-nodeWidth/2}" y="${tops[n.row]}" width="${nodeWidth}" height="${heights[n.row]}" rx="10"/>${textSVG(n.lines,xs[n.column*2+1],ys[n.row*2+1]+6,22,'diagram-node-label')}</g>`).join('')}${labels.join('')}</svg>`;
-  const alternative=`<details class="diagram-text"><summary>Text description</summary><p>${escape(b.description)}</p><ul class="prose-list">${nodes.map(n=>`<li>${escape(n.id)}: ${escape(n.label)}</li>`).join('')}${b.edges.map(e=>`<li>${escape(byID.get(e.from).label)} → ${escape(byID.get(e.to).label)}${e.label?': '+escape(e.label):''}</li>`).join('')}</ul></details>`;
-  return `<figure class="diagram"><figcaption><span>${escape(b.caption)}</span><button class="diagram-expand" type="button" aria-haspopup="dialog" hidden>Expand diagram</button></figcaption><p class="diagram-hint">Scroll horizontally if needed. A text description follows the diagram.</p><div class="diagram-scroll" tabindex="0" role="region" aria-label="${escape(b.caption)}">${svg}</div>${alternative}</figure>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" class="diagram-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="${id}-title ${id}-desc"><title id="${id}-title">${escape(b.caption)}</title><desc id="${id}-desc">${escape(b.description)}</desc><defs>${['',...changes.filter(c=>b.edges.some(e=>e.change===c))].map(c=>`<marker id="${id}-arrow${c&&'-'+c}" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" class="diagram-arrow${c&&' diagram-'+c}"/></marker>`).join('')}</defs>${paths.join('')}${nodes.map(n=>`<g class="diagram-node${n.change?' diagram-'+n.change:''}"><rect x="${xs[n.column*2+1]-nodeWidth/2}" y="${tops[n.row]}" width="${nodeWidth}" height="${heights[n.row]}" rx="10"/>${textSVG(n.lines,xs[n.column*2+1],ys[n.row*2+1]+6,22,'diagram-node-label')}${n.change?`<text class="diagram-change-tag" x="${xs[n.column*2+1]-nodeWidth/2+2}" y="${tops[n.row]-8}">${n.change[0].toUpperCase()+n.change.slice(1)}</text>`:''}</g>`).join('')}${labels.join('')}</svg>`;
+  const alternative=`<details class="diagram-text"><summary>Text description</summary><p>${escape(b.description)}</p><ul class="prose-list">${nodes.map(n=>`<li>${escape(n.id)}: ${escape(n.label)}${n.change?` (${n.change})`:''}</li>`).join('')}${b.edges.map(e=>`<li>${escape(byID.get(e.from).label)} → ${escape(byID.get(e.to).label)}${edgeText(e)?': '+escape(edgeText(e)):''}</li>`).join('')}</ul></details>`;
+  return `<figure class="diagram"><figcaption><span>${escape(b.caption)}</span></figcaption><p class="diagram-hint">Scroll horizontally if needed. A text description follows the diagram.</p><div class="expand-wrap"><button class="diagram-expand expand-button" type="button" aria-haspopup="dialog" hidden>Expand<span class="sr-only"> diagram</span></button><div class="diagram-scroll" tabindex="0" role="region" aria-label="${escape(b.caption)}">${svg}</div></div>${alternative}</figure>`;
 }

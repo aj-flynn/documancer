@@ -1,0 +1,8 @@
+/* Added to every prototype frame: hides variants that are not being viewed and marks each change point. */
+[data-documancer-off]{display:none!important}
+[data-change-anchor]{position:relative}
+[data-change-n]{outline:2px dashed #8a5a00;outline-offset:3px}
+[data-change-n]::after{content:"Change " attr(data-change-n);position:absolute;right:8px;top:-11px;z-index:2147483647;padding:1px 6px;border-radius:3px;background:#8a5a00;color:#fff;font:600 11px/1.5 system-ui,sans-serif;font-style:normal;letter-spacing:.02em;text-transform:none;white-space:nowrap;pointer-events:none}
+[data-change-flash]{animation:documancer-flash 1.8s ease-out}
+@keyframes documancer-flash{0%,45%{box-shadow:0 0 0 6px #f3cf96,0 0 0 9px #8a5a00}100%{box-shadow:0 0 0 6px transparent,0 0 0 9px transparent}}
+@media(prefers-reduced-motion:reduce){[data-change-flash]{animation:none;box-shadow:0 0 0 6px #f3cf96,0 0 0 9px #8a5a00}}

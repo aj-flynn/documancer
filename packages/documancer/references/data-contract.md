@@ -1,11 +1,11 @@
 # Source data contract · schemaVersion 2
 
-All content strings are plain text, escaped by the renderer. No Markdown parsing or raw HTML. UTF-8 JSON is the editable source of truth. Unknown properties are rejected so typos do not silently drop content.
+All content strings are plain text, escaped by the renderer. No Markdown parsing or raw HTML. The only content that does not come from a JSON string is a file beside the source: an image, or a preview prototype (see "Files beside the source"). UTF-8 JSON is the editable source of truth. Unknown properties are rejected so typos do not silently drop content.
 
 Required top-level fields:
 
 - `schemaVersion`: `2`. The renderer rejects any other value; a document written for an earlier version must be brought up to this contract first (see the end of this file).
-- `mode`: `technical`, `user-guide` or `uat`.
+- `mode`: `technical`, `user-guide`, `uat` or `preview`.
 - `title`, `lead`: nonempty strings.
 - `identity`: object with nonempty `id`, `version`, `date` (valid YYYY-MM-DD) and `source` (code/release identity or explicit uncertainty). Optional strings: `repositoryRoot`, `branch`, `commit`, `readiness`.
 - `overview`: nonempty block array. It follows the title and lead directly, with no heading, and is the first thing a reader sees: keep it to what they need before starting. In UAT the renderer adds a linked list of the tests with their current results beneath it.
@@ -21,6 +21,8 @@ Optional shared fields:
 - `sources`: array of `{ "label", "href" }` source links. They appear in Overview, keeping Summary last for UAT.
 
 Technical and user-guide modes require `sections`: nonempty array of `{ "id", "title", "blocks" }`. Section IDs are unique lowercase slugs beginning with a letter (`[a-z][a-z0-9-]*`). `overview` is reserved. Do not supply UAT fields in these modes.
+
+Preview mode has its own fields (`ticket`, `problem`, `findings`, `impact`, `questions`, `views`, `work`, `leaveAsIs`), defined in [preview.md](preview.md). They are rejected in every other mode, and preview rejects `sections`, `setup`, `tests`, `evidence` and `related`.
 
 UAT requires `setup` (nonempty block array) and `tests` (nonempty array). Do not supply `sections`. Optional `evidence` is an array; omit it if unavailable.
 
@@ -56,6 +58,7 @@ Test IDs begin with a letter and contain letters, digits or hyphens. IDs must be
 | `details` | `title`, `blocks`: nonempty block array |
 | `links` | `items`: nonempty `{ "label", "href" }` array |
 | `diagram` | `caption`, `description`, `nodes`, `edges`: static SVG generated from the grid below |
+| `image` | `file`: path to a PNG, JPEG or WebP beside the source; `alt`: required text alternative; optional `caption` |
 
 ### Diagrams
 
@@ -83,17 +86,25 @@ Use diagrams when relationships, branches, sequence or state changes are easier 
 
 Each diagram has 1–40 nodes and 0–80 directed edges. Each node requires a unique lowercase-slug `id`, a nonempty `label` of at most 180 Unicode code points, and integer `row`/`column` positions from 0 to 7. Positions start at the top left; two nodes cannot occupy one cell. IDs are local to the diagram. Each edge requires existing `from`/`to` node IDs and an optional nonempty `label` of at most 48 code points. Duplicate directed edges and self edges are rejected; reverse edges and cycles between different nodes are supported. Unknown fields are rejected.
 
+A node or an edge may carry an optional `change`: `added`, `removed` or `changed`. It marks what a proposal alters, in any mode. The mark is drawn with colour, line style and a text tag (a tag above a node, the word in brackets on an edge label), and is repeated in the text alternative. Leave `change` off everything that stays as it is.
+
 Place related nodes in neighboring cells. The renderer sizes rows for wrapped labels and routes orthogonal arrows around occupied boxes. It does not infer a chronology, decision, or relationship from grid placement: author every intended arrow explicitly, and label decision branches. Edge crossings or shared segments are possible in dense diagrams; inspect the export and rearrange or split diagrams when ambiguous. Use short labels and explain details in the description or nearby prose. This is a box-and-arrow vocabulary, not UML or a sequence-diagram grammar.
 
 Diagrams work anywhere blocks are accepted, including nested details and UAT prerequisites. Verify the final HTML in both themes and at narrow widths: readable labels, correct arrow directions, no clipping or ambiguous overlaps, keyboard scrolling, and no page-wide horizontal overflow. Successful CLI rendering alone is not visual verification.
 
+### Images and files beside the source
+
+An `image` block embeds a local file in the HTML as a data URI, in any mode. Use it for a screenshot the text needs; do not use it for decoration or for anything a diagram block can draw. `file` is a path relative to the folder holding the source JSON, with forward slashes. It may not be absolute, contain `..`, or name a file outside that folder, and remote images are not accepted. The file must be a PNG, JPEG or WebP of at most 1 MB whose content matches its extension; all files in one document may total at most 6 MB. `alt` is required and says what the image shows. With JavaScript, clicking the image or Expand image opens it in the same full-window dialog as a diagram.
+
+Because files are read at render time, a document that refers to one must be rendered from its source file (the CLI does this) or with `baseDirectory` passed to `renderDocument`. `node scripts/render.mjs --check source.json` validates a source and its files without writing anything.
+
 Links support HTTPS, HTTP, mailto, fragment anchors and relative document paths. Protocol-relative URLs, backslashes, control characters and other schemes are rejected. Local fragment links must reference a generated section ID; cross-document fragments are the author's responsibility. The renderer never fetches linked resources.
 
-The CLI validates required fields, object keys, dates, modes, URL schemes, table widths and ID uniqueness. It cannot verify product claims, source freshness or remote link reachability. No generated timestamp enters the document build, so the same source and package produce the same HTML. UAT summaries receive their own generation time when the user clicks Generate summary.
+The CLI validates required fields, object keys, dates, modes, URL schemes, table widths, ID uniqueness and referenced files. It cannot verify product claims, source freshness or remote link reachability. No generated timestamp enters the document build, so the same source and package produce the same HTML. UAT summaries receive their own generation time when the user clicks Generate summary.
 
 ## Generating a document set
 
-Use `node scripts/render.mjs --set set.json output-directory`. The manifest has one `documents` array; each entry has `source` (JSON path relative to the manifest) and `output` (relative HTML path within the output directory). Include at most one document of each mode. See `../examples/set.json`. All sources are validated and rendered before output is written. Duplicate outputs, duplicate modes and traversal paths are rejected.
+Use `node scripts/render.mjs --set set.json output-directory`. The manifest has one `documents` array; each entry has `source` (JSON path relative to the manifest) and `output` (relative HTML path within the output directory). Include at most one document of each mode. A preview cannot be in a set; render it on its own. See `../examples/set.json`. All sources are validated and rendered before output is written. Duplicate outputs, duplicate modes and traversal paths are rejected.
 
 Header links come only from the current set, regardless of stale files in the destination. Technical and user guides link only to each other; UAT is excluded. UAT links to either guide open in a new tab with `noopener noreferrer` and an accessible new-tab announcement. Known companion links in body blocks and sources follow the same UAT policy. Do not author links to other UAT files in public documentation. Single-document CLI rendering has no companion navigation.
 
@@ -102,3 +113,7 @@ This is a build-time distribution boundary, not a runtime file probe. If the dis
 ## Updating a schemaVersion 1 document
 
 Set `schemaVersion` to `2`. No field was removed or renamed. Version 2 adds the optional `context` and `generatedBy` fields and reserves the section ID `document-content`; rename a section that uses it. Then render again and fix anything the renderer reports.
+
+## Added since schemaVersion 2 was introduced
+
+These additions need no change to an existing version 2 document. Package 1.6.0 added `mode: "preview"` with its fields, the `image` block, and the optional `change` field on diagram nodes and edges. Five more IDs are reserved in preview mode only: `problem`, `findings`, `impact`, `work` and `decision`.

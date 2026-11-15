@@ -2,6 +2,32 @@
 
 All four editions (Codex, OpenCode, Cursor, Claude Code) share one version number.
 
+## 1.6.0 (2026-11-15)
+
+No breaking change: `schemaVersion` stays 2. Existing documents need no edits and render in the new card layout.
+
+### Added
+
+- **Preview mode** (`mode: "preview"`): shows what a ticket would change before it is built and collects the reader's response. The page leads with the problem and what the request missed, then an impact strip, questions with options, one view per screen or backend change, the work that will be created, and a decision block with Approve, Send back and Reject ticket. Each view leads with one question (`ask`), then a numbered list of what changes in plain language, with before and after side by side where there is one. The contract is in `references/preview.md`; `examples/preview.json` shows every view kind.
+- **Seven view kinds:** `screen`, `examples`, `data`, `access`, `flow`, `contract` and `operations`. A screen shows a screenshot of now and either a clickable prototype or an image of what is proposed.
+- **Prototypes** are one HTML file beside the source, embedded in a sandboxed frame that blocks every network request. The renderer supplies the option switch, numbered change markers, jump links and Expand. It rejects a prototype that refers outside itself, and one whose `data-change` marks do not match the view's list of changes.
+- **Responses:** Yes, Change, Ask first, Drop or Later per view (stored as `ok`, `change`, `question`, `drop`, `later`), with a note required for everything except Yes; one choice per question, plus "None of these". Nothing is preselected. Viewing an option does not choose it, and a Yes is withdrawn if the reader then chooses a different option. "Yes to all remaining" is recorded as a bulk answer.
+- **Card layout in every mode.** Each section after the introduction is a card with an icon, a label and a colour that say what it is for: amber is background, blue is a choice, green is something to do or decide, grey is information only. The renderer picks all three from the content; the JSON does not change. A guide section is labelled by what it holds (steps, a diagram, code, a table, folded detail). A UAT test leads with what the tester is judging and ends with large result buttons. Callouts become icon rows, coloured as a warning, a tip or a reminder from the words in their title.
+- **Sidebar and detail panel** match the cards: sections are grouped, each with its icon, and a dot fills in as a test or view is answered. The panel shows a progress meter and a colour key. Below the width where the panel fits, a bar under the header keeps the count and a link to each answer in view.
+- **Two more appearances:** Cyberpunk '80s (neon on violet-black, square corners, grid and scanlines) and Cyberpunk modern (black with acid yellow, cut corners, condensed type). They are chosen in Appearance, never by the system setting, and do not affect print.
+- **`image` block** in every mode: a local PNG, JPEG or WebP embedded in the page, with required alt text, a 1 MB limit per file and 6 MB per document. Images open in the full-window dialog that diagrams use.
+- **`change` on diagram nodes and edges** (`added`, `removed`, `changed`), in every mode.
+- **`render.mjs --check <source.json>`** validates a source and its files without rendering, and exits non-zero with the path of the field at fault.
+- **Host interface:** `renderDocument` accepts `baseDirectory` and, for a preview, `preview: { responses, submitUrl }` to pre-fill earlier responses and to send the response on an explicit click. `checkDocument` and `viewHashes` are exported; a view's hash covers its fields and the bytes of its files.
+
+### Changed
+
+- **Expand** for a diagram or image now sits on the item, at its top right corner, instead of in the caption row.
+- **Light appearance:** cards are lighter than the page, and the main button is green with light text.
+- **UAT wording on the page:** Prerequisites is now "Before you start", Test plan is "Do this", and Problem signs is a warning row. Reset and agent rehearsal are folded under one heading. The JSON fields are unchanged.
+- **Sets** resolve each document's files from that document's own folder, and refuse a preview.
+- **Skill text** in all four editions describes the fourth mode and restates the submit rule: nothing is sent without an explicit click.
+
 ## 1.5.0 (2026-11-15)
 
 ### Breaking
