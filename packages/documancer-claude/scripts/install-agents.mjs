@@ -13,10 +13,6 @@ export async function installAgents(projectRoot,{check=false}={}){
   const root=await realpath(requested);
   const claude=join(root,'.claude'),destination=join(claude,'agents');
   await safeDirectory(claude);await safeDirectory(destination);
-  for(const name of agentNames){
-    const legacy=join(destination,name.replace('documancer-','forest-docs-')+'.md');
-    if(await inspect(legacy))throw new Error(`Previous agent profile is still installed; review and migrate it first: ${legacy}`);
-  }
   const plan=[];
   for(const name of agentNames){
     const text=await readFile(new URL(name+'.md',source),'utf8');

@@ -47,10 +47,6 @@ async function main() {
   const destination = join(skillsRoot, 'documancer');
   await allowMissingRealDirectory(agentsRoot);
   await allowMissingRealDirectory(skillsRoot);
-  const legacy = join(skillsRoot, 'forest-documentation');
-  if (await inspect(legacy)) {
-    throw new Error(`Previous skill is still installed; review and migrate it before installing Documancer: ${legacy}`);
-  }
   if (await inspect(destination)) {
     throw new Error(`Skill destination already exists; review it before replacing: ${destination}`);
   }

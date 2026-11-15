@@ -11,14 +11,14 @@ const editions = [
   { env: 'codex', pkg: 'documancer', skill: '.agents', agents: '.codex', ext: 'toml' },
   { env: 'opencode', pkg: 'documancer-opencode', skill: '.opencode', agents: '.opencode', ext: 'md' },
   { env: 'cursor', pkg: 'documancer-cursor', skill: '.cursor', agents: '.cursor', ext: 'md' },
-  { env: 'claude', pkg: 'documancer-claude', skill: '.claude', agents: '.claude', ext: 'md' },
+  { env: 'claude', pkg: 'documancer-claude', skill: '.claude', agents: '.claude', ext: 'md', legacy: false },
 ];
 const run = (...args) => spawnSync(process.execPath, args, { cwd: root, encoding: 'utf8' });
 const ok = result => assert.equal(result.status, 0, result.stderr || result.stdout);
 const missing = async path => assert.rejects(lstat(path), { code: 'ENOENT' });
 
 for (const edition of editions) {
-  const { env, pkg, skill, agents, ext } = edition;
+  const { env, pkg, skill, agents, ext, legacy: hasLegacy = true } = edition;
   test(`${env}: dry-run, install with agents, relocated render and no overwrite`, async () => {
     const project = await mkdtemp(join(tmpdir(), `documancer ${env} `));
     await mkdir(join(project, agents));
@@ -67,10 +67,13 @@ for (const edition of editions) {
     const project = await mkdtemp(join(tmpdir(), `documancer-skill-${env}-`));
     ok(run('install.mjs', env, project));
     await missing(join(project, agents, 'agents'));
-    const legacy = await mkdtemp(join(tmpdir(), 'documancer-legacy-'));
-    await mkdir(join(legacy, skill, 'skills/forest-documentation'), { recursive: true });
-    assert.match(run('install.mjs', env, legacy).stderr, /Previous skill/);
-    await missing(join(legacy, skill, 'skills/documancer'));
+    // Editions that replaced the earlier forest-documentation skill refuse to install beside it. The Claude Code edition never had one.
+    if (hasLegacy) {
+      const legacy = await mkdtemp(join(tmpdir(), 'documancer-legacy-'));
+      await mkdir(join(legacy, skill, 'skills/forest-documentation'), { recursive: true });
+      assert.match(run('install.mjs', env, legacy).stderr, /Previous skill/);
+      await missing(join(legacy, skill, 'skills/documancer'));
+    }
     const blocked = await mkdtemp(join(tmpdir(), 'documancer-blocked-'));
     await writeFile(join(blocked, skill), 'keep');
     assert.match(run('install.mjs', env, blocked).stderr, /real directory/);
