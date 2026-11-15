@@ -22,7 +22,7 @@ async function files(path) {
 const paths = [];
 for (const entry of entries) paths.push(...(entry.includes('.') ? [entry] : await files(entry)));
 let mismatches = 0;
-for (const edition of ['documancer-opencode', 'documancer-cursor']) {
+for (const edition of ['documancer-opencode', 'documancer-cursor', 'documancer-claude']) {
   for (const path of paths) {
     const content = await readFile(join(source, path));
     const target = join(root, edition, path);

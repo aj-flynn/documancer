@@ -4,7 +4,7 @@ Use `mode: "user-guide"`. Organize around the reader's tasks and observable outc
 
 State the actual access, account role and starting location needed. Use the visible interface labels in ordered steps; name the outcome so the reader can recognize success. Put alternate paths and error recovery alongside the task they affect. Include consequences before irreversible steps. Avoid implementation detail unless it changes the reader's decision.
 
-Do not invent support channels, roles or features. When access or behavior cannot be verified, identify the specific uncertainty. Use the same technical source identity as companion engineering documentation, but write for users rather than copying an architecture explanation.
+Add `context` only when the guide was written for a specific piece of work or has a link the reader needs, such as a support page; a standalone task guide usually has none. Do not invent support channels, roles or features. When access or behavior cannot be verified, identify the specific uncertainty. Use the same technical source identity as companion engineering documentation, but write for users rather than copying an architecture explanation.
 
 Add a `diagram` block when a task's choices, handoffs or recovery paths are clearer visually. Keep labels in the user's vocabulary, provide an explanatory description, and retain actionable instructions in the surrounding steps.
 

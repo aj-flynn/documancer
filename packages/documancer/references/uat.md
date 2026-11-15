@@ -2,7 +2,7 @@
 
 Use `mode: "uat"` for an explicitly requested HTML acceptance plan or a complex human exercise needing prepared states and result recording. For a small change, short inline acceptance steps may suffice unless the user requested the document. No human judgment needed means report automated evidence; do not invent manual work.
 
-Select a small set of affected user journeys tied to the promised outcome. Keep broader state-space and infrastructure checks in automated evidence. Prefer independent tests; disclose unavoidable ordering, data changes and repeat/reset instructions.
+When the request names a ticket or pull request, record it in `context` with a one- or two-sentence summary of the change under test; never invent one. Select a small set of affected user journeys tied to the promised outcome. Keep broader state-space and infrastructure checks in automated evidence. Prefer independent tests; disclose unavoidable ordering, data changes and repeat/reset instructions.
 
 ## Prepare real starting states
 

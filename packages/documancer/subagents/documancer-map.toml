@@ -1,8 +1,7 @@
 name = "documancer-map"
 description = "Map one bounded documentation scope to implementation evidence; return verified facts and source references, not a repository dump."
-model = "gpt-5.6-terra"
+model = "gpt-6.1-terra"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
 developer_instructions = """
 You gather evidence for Documancer. Work only on the assigned feature, subsystem, or question. Do not draft the final document or change files. Do not spawn other agents.
 

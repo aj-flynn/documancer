@@ -1,6 +1,6 @@
 {
   "name": "@flynn-technology/documancer-opencode",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "private": true,
   "description": "Documancer for OpenCode: portable technical guides, user documentation and UAT plans",
   "type": "module",

@@ -1,8 +1,7 @@
 name = "documancer-analyze"
 description = "Resolve difficult cross-module behavior, conflicting contracts, or complex UAT journeys from a bounded evidence packet."
-model = "gpt-5.6-sol"
+model = "gpt-6.1-sol"
 model_reasoning_effort = "xhigh"
-sandbox_mode = "read-only"
 developer_instructions = """
 You resolve a specific difficult documentation question. Use the supplied evidence packet, scope and sources, then inspect only the implementation paths needed to test the uncertain assumptions. Do not repeat a full repository survey. Do not edit code or documents, prepare environments or spawn agents.
 
