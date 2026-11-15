@@ -6,10 +6,10 @@ This skill requests delegation only when it reduces repeated discovery, isolates
 
 | Agent | Model | Reasoning | Use |
 | --- | --- | --- | --- |
-| `documancer-map` | `gpt-5.6-terra` | `high` | Evidence discovery for one relevant subsystem |
-| `documancer-analyze` | `gpt-5.6-sol` | `xhigh` | Cross-module contracts, ambiguity, complex state/permission behavior or UAT journey design |
-| `documancer-write` | `gpt-5.6-luna` | `medium` | One JSON draft from verified facts and an agreed outline |
-| `documancer-review` | `gpt-5.6-terra` | `high` | Bounded accuracy review of a substantial or consequential draft |
+| `documancer-map` | `gpt-6.1-terra` | `high` | Evidence discovery for one relevant subsystem |
+| `documancer-analyze` | `gpt-6.1-sol` | `xhigh` | Cross-module contracts, ambiguity, complex state/permission behavior or UAT journey design |
+| `documancer-write` | `gpt-6-luna` | `medium` | One JSON draft from verified facts and an agreed outline |
+| `documancer-review` | `gpt-6.1-terra` | `high` | Bounded accuracy review of a substantial or consequential draft |
 
 The writer does not independently reason through a large codebase. Discovery uses high reasoning; difficult interpretation uses Sol at extra-high. Source ambiguity goes to analysis before writing. If a scope already clearly involves complex permissions, concurrency, migrations or cross-service semantics, route directly to analysis rather than paying for a predictable failed cheaper pass. Repo size alone calls for partitioning, not maximum reasoning on every file.
 
@@ -47,10 +47,12 @@ When the available spawn tool supports selecting a named custom agent, select th
 
 > Use documancer-map for the request-review subsystem only. Determine the entry route, reviewer permissions and allowed completion transitions. Read the supplied repository guidance and evidence paths. Return verified facts, source pointers and unresolved questions; do not edit files or prepare data. Target a compact evidence packet. The parent will inspect the existing guide while you trace the implementation.
 
-If the harness has no named-agent selector but supports explicit model/effort spawning, read the chosen TOML and include its `developer_instructions` in the bounded task prompt, with the exact model and effort supplied separately. Use no history fork when supported. A prompt cannot enforce the TOML sandbox; inherit the host permissions and report this limitation instead of claiming a read-only sandbox was applied. If custom agents or a configured model are unavailable, do the bounded work in the parent and disclose that the planned lower-cost delegation was unavailable; never silently substitute the expensive parent model for a supposed cheaper agent.
+If the harness has no named-agent selector but supports explicit model/effort spawning, read the chosen TOML and include its `developer_instructions` in the bounded task prompt, with the exact model and effort supplied separately. Use no history fork when supported. Either way the role inherits the parent session's sandbox and approval settings; report that instead of claiming a read-only sandbox was applied. If custom agents or a configured model are unavailable, do the bounded work in the parent and disclose that the planned lower-cost delegation was unavailable; never silently substitute the expensive parent model for a supposed cheaper agent.
+
+Mapping, analysis and review are read-only by instruction only. A custom agent file cannot set `sandbox_mode` or `approval_policy`: subagents inherit both from the parent turn, so the profiles do not declare them. For enforced read-only discovery, run the parent session in a read-only sandbox.
 
 Custom agent files pin both model and effort; a named profile's file can override an explicit spawn value. To change an installed role, change both fields deliberately and verify they are supported on that host. Do not assume a request for higher effort overrides its TOML or changes context capacity. This package does not modify account defaults, enable global delegation, or change approval policy.
 
 ## Basis and limits
 
-Reviewed September 20, 2026: [OpenAI subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents). It documents standalone TOML definitions under project `.codex/agents/`, named model/effort settings, compact subagent summaries and token overhead. Exact Sol/Terra/Luna IDs and the selected efforts were verified against this host's Codex model catalog; the guidance's general flagship examples do not establish exact pricing or availability on another account. Recheck model availability before adopting on a different host. These instructions do not claim that higher reasoning alone can cover an arbitrarily large repository.
+Reviewed September 20, 2026 and rechecked November 15, 2026: [OpenAI subagent guidance](https://learn.chatgpt.com/docs/agent-configuration/subagents). It documents standalone TOML definitions under project `.codex/agents/`, named model/effort settings, compact subagent summaries and token overhead. The model IDs were updated on November 15, 2026 to those in the [Codex models page](https://learn.chatgpt.com/docs/models) (GPT-6.1 Sol, GPT-6.1 Terra, GPT-6 Luna) and were not run against a live account; `gpt-6.1-terra` needs Codex CLI 0.159.0 or later. The earlier GPT-5.6 IDs and the selected efforts had been verified against the original host's Codex model catalog; the guidance's general flagship examples do not establish exact pricing or availability on another account. Recheck model availability before adopting on a different host. These instructions do not claim that higher reasoning alone can cover an arbitrarily large repository.

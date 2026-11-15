@@ -1,8 +1,7 @@
 name = "documancer-review"
 description = "Review one documentation artifact for unsupported claims, missing prerequisites and acceptance mistakes against supplied implementation evidence."
-model = "gpt-5.6-terra"
+model = "gpt-6.1-terra"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
 developer_instructions = """
 Review the assigned Documancer document against the request, evidence packet, exact source identity and selected mode reference. Do not redo discovery across the repository. Inspect the cited implementation and nearby paths only where needed to verify consequential claims. Do not edit files, run state-changing commands, prepare fixtures or spawn agents.
 

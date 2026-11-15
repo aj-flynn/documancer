@@ -13,8 +13,32 @@
     if(query)menu.open=true;
   });
   search.addEventListener('keydown',e=>{if(e.key==='Escape'){search.value='';search.dispatchEvent(new Event('input'))}if(e.key==='Enter')nav.find(a=>!a.hidden)?.click()});
+  const headerTitle=document.querySelector('.header-doc-title');
+  if(headerTitle&&typeof IntersectionObserver==='function'){
+    headerTitle.title=headerTitle.textContent;
+    new IntersectionObserver(([entry])=>headerTitle.classList.toggle('shown',!entry.isIntersecting),{rootMargin:'-60px 0px 0px 0px'}).observe(document.querySelector('.article h1'));
+  }
+  // The detail rail lists every sub-heading, table and diagram on the page, grouped by section. It is built once, so it never appears or disappears while scrolling.
+  const outline=document.querySelector('.section-outline');let outlineGroups=[];
+  if(outline){
+    outlineGroups=sections.map(section=>({section,targets:[...section.querySelectorAll('h3,figcaption>span,caption')]})).filter(group=>group.targets.length).map(({section,targets})=>{
+      const group=document.createElement('li'),title=document.createElement('span'),list=document.createElement('ol');
+      title.className='outline-title';title.textContent=section.querySelector('h2')?.textContent||'Overview';
+      list.append(...targets.map(target=>{
+        const item=document.createElement('li'),link=document.createElement('a');
+        link.href='#'+section.id;link.textContent=target.textContent;
+        link.addEventListener('click',event=>{event.preventDefault();target.scrollIntoView({block:'start'})});
+        item.append(link);return item;
+      }));
+      group.append(title,list);return {section,group};
+    });
+    outline.querySelector('ol').replaceChildren(...outlineGroups.map(entry=>entry.group));
+    outline.hidden=!outlineGroups.length;
+    // A guide with no context and nothing to outline has no use for the detail rail: drop the column.
+    if(!outlineGroups.length&&!document.querySelector('.detail-rail .context-summary,.detail-rail .context-links'))document.body.classList.add('no-rail');
+  }
   let scheduled=false;
-  function current(){document.querySelector('.sidebar').style.setProperty('--sidebar-offset',Math.max(0,document.querySelector('.doc-layout').getBoundingClientRect().top)+'px');const active=sections.filter(s=>s.getBoundingClientRect().top<=74).at(-1)||sections[0];nav.forEach(a=>{if(a.hash==='#'+active.id)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')});scheduled=false}
+  function current(){const atEnd=innerHeight+scrollY>=document.documentElement.scrollHeight-2,active=atEnd?sections.at(-1):sections.filter(s=>s.getBoundingClientRect().top<=Math.max(74,innerHeight*.3)).at(-1)||sections[0];nav.forEach(a=>{if(a.hash==='#'+active.id)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')});outlineGroups.forEach(entry=>entry.group.toggleAttribute('data-current',entry.section===active));scheduled=false}
   addEventListener('scroll',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(current)}},{passive:true});addEventListener('resize',current);current();
   document.querySelectorAll('.copy-code').forEach(button=>button.addEventListener('click',async()=>{
     const code=button.closest('.code-example').querySelector('code');
@@ -76,10 +100,12 @@
   const state=document.querySelector('#summary-state'),output=document.querySelector('#summary-text'),button=document.querySelector('#generate-summary');let revision=0;
   const results=()=>tests.map(t=>({id:t.dataset.test,title:t.dataset.title,result:t.querySelector('input:checked').value,notes:t.querySelector('textarea').value}));
   const counts=()=>labels.map(s=>`${s}: ${results().filter(r=>r.result===s).length}`).join(' · ');
-  function printValues(){tests.forEach(t=>{t.querySelector('.print-result').textContent='Result: '+t.querySelector('input:checked').value;t.querySelector('.print-notes').textContent='Notes: '+(t.querySelector('textarea').value||'(none)')});document.querySelector('#print-summary').textContent=output.value?(revision===generatedRevision?output.value:'Summary is out of date. Generate again.\n\n'+output.value):'No summary generated.'}
+  function printValues(){tests.forEach(t=>{t.querySelector('.print-result').textContent='Result: '+t.querySelector('input:checked').value;t.querySelector('.print-notes').textContent='Notes: '+(t.querySelector('textarea').value||'(none)')});document.querySelector('#print-summary').textContent=output.value?(revision===generatedRevision?output.value:'Summary is out of date. Generate again.\n\n'+output.value):''}
   let generatedRevision=-1;
-  function changed(){revision++;document.querySelector('#result-counts').textContent=counts();if(output.value)state.textContent='Results changed. Generate summary again to include the latest results and notes.';printValues()}
-  tests.forEach(t=>t.addEventListener('input',changed));document.querySelector('#result-counts').textContent=counts();printValues();
+  const indexes=[...document.querySelectorAll('.test-index')].map(list=>[...list.querySelectorAll('.test-status')]),progress=[...document.querySelectorAll('.test-progress')];
+  function showProgress(){const all=results();indexes.forEach(marks=>all.forEach((r,i)=>{marks[i].textContent=r.result;marks[i].dataset.result=r.result.toLowerCase()}));const count=`${all.filter(r=>r.result!=='Untested').length} of ${all.length} tests have a result.`;progress.forEach(p=>{const note=document.createElement('span');note.className='screen-only';note.textContent=' Results stay in this tab only.';p.replaceChildren(count,note)})}
+  function changed(){revision++;showProgress();document.querySelector('#result-counts').textContent=counts();if(output.value)state.textContent='Results changed. Generate summary again to include the latest results and notes.';printValues()}
+  tests.forEach(t=>t.addEventListener('input',changed));document.querySelector('#result-counts').textContent=counts();printValues();showProgress();
   button.addEventListener('click',async()=>{
     const version=revision;button.disabled=true;
     const evidence=data.evidence.length?data.evidence.map(e=>`${e.title} — ${e.status}\n${e.detail}${e.history?'\nHistory: '+e.history:''}`).join('\n\n'):'No automated evidence supplied.';

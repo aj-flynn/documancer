@@ -1,6 +1,6 @@
 ---
 name: documancer
-description: Create or update portable HTML technical references, user guides, and interactive human UAT plans. Use for documentation artifacts, not code comments or automated test suites.
+description: Create or update self-contained HTML technical references, user guides, and interactive human UAT plans from editable JSON. Use when the user asks for Documancer, a technical reference, a user guide, a human acceptance plan, or offline HTML product documentation. Do not use for README files, other markdown docs, code comments, or automated test suites.
 ---
 
 # Documancer

@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "mode": "technical",
   "title": "Documentation reader reference",
   "lead": "Architecture and behavior of the portable Documancer reader.",
@@ -7,7 +7,7 @@
     "id": "DOCUMANCER-TECH",
     "version": "1.0",
     "date": "2026-09-19",
-    "source": "documancer package 1.4.0"
+    "source": "documancer package 1.5.0"
   },
   "overview": [
     {

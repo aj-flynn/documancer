@@ -1,6 +1,6 @@
 ---
 name: documancer
-description: Create or update portable HTML technical references, user guides, and interactive human UAT plans. Use for documentation artifacts, not code comments or automated test suites.
+description: Create or update self-contained HTML technical references, user guides, and interactive human UAT plans from editable JSON. Use when the user asks for Documancer, a technical reference, a user guide, a human acceptance plan, or offline HTML product documentation. Do not use for README files, other markdown docs, code comments, or automated test suites.
 compatibility: opencode
 ---
 
@@ -18,7 +18,7 @@ For multiple requested audiences, create separate documents with the same source
 
 ## OpenCode integration
 
-Load this skill with the native `skill` tool using name `documancer`. Resolve resources relative to the returned skill location. Use configured read/search tools for evidence and the shell for the Node renderer; do not assume Codex tools exist.
+Load this skill with the native `skill` tool using the ID `documancer`. Resolve resources relative to the returned skill location. Use configured read/search tools for evidence and the shell for the Node renderer; do not assume Codex tools exist.
 
 ## Keep work proportional
 
