@@ -73,6 +73,8 @@ html[data-theme=light] .site-header .brand-light{display:block}
 .header-doc-title.shown{opacity:1}
 .document-links{display:flex;flex-wrap:wrap;gap:24px;margin-left:auto;font-size:15px}
 .document-links a{padding:10px 0}
+/* The document details sit in the footer on screen and beside the wordmark on paper. */
+.site-header .document-identity{display:none}
 
 /* ---------- Layout: sidebar and article; a detail rail joins them on wide screens ---------- */
 .doc-layout{display:grid;grid-template-columns:256px minmax(0,1fr);max-width:1360px;margin:auto}
@@ -336,7 +338,6 @@ legend{margin-bottom:10px;padding:0;font-size:19px;font-weight:600}
 .proto-count{flex:none}
 .proto-frame{display:block;width:100%;height:min(70vh,640px);border:0;background:#fff}
 .proto:modal .proto-frame{flex:1;height:auto;min-height:0}
-.proto-print{display:none}
 .row-changed th:first-child{padding-left:10px;box-shadow:inset 3px 0 0 var(--hold)}
 .cell-changed{background:var(--hold-bg)}
 .cell-condition{display:block;font-size:13px;color:var(--muted)}
@@ -367,8 +368,9 @@ legend{margin-bottom:10px;padding:0;font-size:19px;font-weight:600}
 .document-identity dt{font-weight:600;white-space:nowrap}
 .document-identity dd{margin:0;overflow-wrap:anywhere}
 
-/* ---------- Desktop: fixed header ---------- */
-@media(min-width:761px){
+/* ---------- Window widths. Each is for screens only, so paper is laid out the same whatever its size ---------- */
+/* Desktop: fixed header */
+@media screen and (min-width:761px){
   :root{scroll-padding-top:76px}
   .site-header{position:sticky;top:0;z-index:10}
   .sidebar{top:60px}
@@ -378,7 +380,7 @@ legend{margin-bottom:10px;padding:0;font-size:19px;font-weight:600}
 }
 
 /* ---------- Wide: three columns. The rail holds context, progress and the page outline ---------- */
-@media(min-width:1280px){
+@media screen and (min-width:1280px){
   :root:has(.answer-bar){scroll-padding-top:76px}
   .doc-layout{grid-template-columns:264px minmax(0,1080px) 320px;justify-content:center;max-width:none;margin:0}
   .site-header{padding-inline:max(24px,calc((100vw - 1664px)/2 + 20px))}
@@ -420,18 +422,18 @@ legend{margin-bottom:10px;padding:0;font-size:19px;font-weight:600}
 }
 
 /* ---------- Narrower desktop ---------- */
-@media(max-width:1200px){
+@media screen and (max-width:1200px){
   .doc-layout{grid-template-columns:228px minmax(0,1fr)}
   .article{padding:24px 28px 48px}
   .answer-bar{margin:-24px -28px 22px;padding:8px 28px}
   .theme-control{padding:14px 16px}
 }
-@media(max-width:1190px){
+@media screen and (max-width:1190px){
   .code-toolbar,.code-toolbar button{padding:6px}
 }
 
 /* ---------- Phone: one column; search and appearance share a row above a collapsible section list ---------- */
-@media(max-width:760px){
+@media screen and (max-width:760px){
   .site-header{flex-wrap:wrap;height:auto;min-height:56px;padding:8px 20px}
   .site-header img{width:124px}
   .site-header .brand-link{min-width:0;margin-right:auto}
@@ -479,10 +481,10 @@ legend{margin-bottom:10px;padding:0;font-size:19px;font-weight:600}
   .doc-footer>span{display:block;margin-bottom:8px}
   .live-message{left:16px;right:16px;bottom:16px;font-size:14px;text-align:center}
 }
-@media(max-width:430px){
+@media screen and (max-width:430px){
   .site-header img{width:112px}
 }
-@media(max-width:370px){
+@media screen and (max-width:370px){
   .code-toolbar button{padding:5px;font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -552,48 +554,101 @@ legend{margin-bottom:10px;padding:0;font-size:19px;font-weight:600}
   html[data-theme=neo] ::selection{color:#08090b}
 }
 
-/* ---------- Print: one clean column. Screen-only chrome goes, links show their address, blocks stay whole ---------- */
+/* ---------- Print: one plain document that is the same from every appearance and on every paper size.
+   The palette and the type scale are set here and nowhere else. Screen-only chrome goes, links show their address,
+   a heading stays with what it introduces, and small blocks are never split across pages ---------- */
 @media print{
-  @page{margin:16mm 14mm}
-  :root,html[data-theme]{--bg:#fff;--surface:#fff;--raise:#fff;--line:#ccd0bd;--ink:#19241b;--muted:#52634f;--accent:#19241b;--ok:#2c6a27;--bad:#a3371f;--hold:#7b5a10;--info:#1f5a86;--ok-bg:#fff;--bad-bg:#fff;--hold-bg:#fff;--info-bg:#fff}
-  body{background:#fff;color:#19241b}
-  .skip,.sidebar,.detail-rail,.header-doc-title,.document-links,.live-message,.doc-footer a,.screen-only,
-  .code-toolbar,.diagram-hint,.expand-button,.diagram-dialog,.diagram-text,
-  #generate-summary,#summary-state,.test-case .answer,.notes-label,textarea{display:none!important}
-  .brand-dark{display:none!important}
+  /* Each sheet carries the document title, which the renderer supplies, and its page number. The empty boxes at the top
+     take the place of the date and address a browser would otherwise print there. */
+  @page{
+    margin:15mm 16mm 18mm;
+    @top-left{content:""}@top-center{content:""}@top-right{content:""}
+    @bottom-left{font:9pt "Source Sans 3","Segoe UI",sans-serif;color:#555}
+    @bottom-right{content:"Page " counter(page) " of " counter(pages);font:9pt "Source Sans 3","Segoe UI",sans-serif;color:#555}
+  }
+  :root,html[data-theme]{
+    --bg:#fff;--rail-bg:#fff;--surface:#fff;--raise:#fff;--hover:#fff;--line:#c4c4c4;
+    --ink:#1a1a1a;--muted:#555;--accent:#1a1a1a;
+    --ok:#2c6a27;--bad:#a3371f;--hold:#7b5a10;--info:#1f5a86;
+    --ok-bg:#fff;--bad-bg:#fff;--hold-bg:#fff;--info-bg:#fff;
+    --button-fill:#fff;--button-hover:#fff;--button-ink:#1a1a1a;
+    --tint:#f4f4f1;
+    color-scheme:light;
+  }
+  /* The reader is sized for a screen. On paper everything is scaled together, which puts body text near 9.5pt. */
+  html{zoom:.75}
+  body{background:#fff;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+
+  /* Removed: navigation, controls and anything that only works in a browser. */
+  .skip,.sidebar,.detail-rail,.header-doc-title,.document-links,.live-message,.doc-footer,.screen-only,
+  .code-toolbar button,.diagram-hint,.expand-button,.diagram-dialog,.diagram-text,.proto-bar,
+  .test-case .answer,.view .answer,.question input,.notes-label,textarea,.carried,.response-problem,.note-rule,
+  #generate-summary,#summary-state,#ok-remaining,.decision-actions,.brand-dark{display:none!important}
   .brand-light{display:block!important}
-  .site-header{position:static;height:auto;padding:0 0 10px;border-bottom:1px solid #ccd0bd;background:#fff}
+
+  /* Page: the wordmark and the document details once, then a single full-width column. */
+  .site-header{align-items:flex-end;height:auto;padding:0 0 10px;border-bottom:2px solid var(--ink);background:none}
+  .site-header .document-identity{display:flex;justify-content:flex-end;font-size:12px;color:var(--muted)}
+  .site-header img{width:120px}
   .doc-layout{display:block}
-  .article{max-width:none;padding:0}
-  .article h1{font-size:26px}
-  .card{margin-top:18px;border-radius:0;border-width:1px 0 0;border-style:solid;overflow:visible}
-  .card-head{padding:12px 0 8px;border:0;box-shadow:none;break-after:avoid}
-  .card-icon{width:34px;height:34px;border:1px solid #ccd0bd}
-  .card-ask{padding:0 0 8px;border:0;break-after:avoid}
-  .article .card-ask p:last-child{font-size:18px}
-  .card-body,.card-foot{padding:0;border:0}
-  .card-foot{margin-top:10px}
-  .article h3,.diagram figcaption{break-after:avoid}
-  .note,.test-index li,.pass-when,tr,.steps li,.code-example,.diagram-scroll,fieldset,.changes li{break-inside:avoid}
-  .note,.pass-when,.changes li,.change-state,.impact-strip div{border:1px solid #ccd0bd;box-shadow:none}
-  .doc-intro>.context-box,.doc-intro>.test-index{display:block;background:#fff}
-  .doc-intro>.test-progress:not(:empty){display:block}
-  .article a[href^="http"]::after{content:" (" attr(href) ")";font-size:.85em;word-break:break-all}
-  .code-example{border-color:#ccd0bd;background:#fff;color:#19241b}
-  .code-example pre{color:#19241b;white-space:pre-wrap}
-  details{display:block;margin-top:12px;border:0}
-  summary{min-height:0;padding:0 0 6px;font-weight:600;list-style:none;cursor:default}
+  .article{max-width:none;padding:18px 0 0}
+  .article h1,.article p,.article .lead,.doc-intro>p:not(.lead),.article .card-ask p:last-child,.article .problem-symptom{max-width:none}
+  .article p,.article li{orphans:3;widows:3}
+  a{text-decoration:none}
+  .article a[href^="http"]::after{content:" (" attr(href) ")";font-size:.85em;color:var(--muted);word-break:break-all}
+
+  /* Sections: a rule, the icon and heading, then the question as a marked block. */
+  .card,.card.tone-muted{margin-top:26px;border:0;border-top:2px solid var(--ink);border-radius:0;background:none;overflow:visible}
+  .card-head{padding:12px 0 0;border:0;box-shadow:none}
+  .card-icon{width:38px;height:38px;border:1px solid var(--line)}
+  .card-flag{border:1px solid currentColor}
+  .card-ask{margin-top:12px;padding:8px 14px 10px;border:0;border-left:4px solid var(--ink);background:var(--tint)}
+  .article .card-ask p:last-child{font-size:20px}
+  .card-body{padding:14px 0 0}
+  .card-foot{margin-top:16px;padding:10px 14px;border:1px solid var(--line);border-left:4px solid var(--ink)}
+  .card-final .card-body{background:none}
+
+  /* Page breaks. */
+  .card-head,.card-ask,.article h3,figcaption,legend,summary,#decision-counts,.fold-body p:has(+.prose-list){break-after:avoid}
+  .card-head,.card-ask,.card-foot,.context-box,.note,.pass-when,.table-wrap,tr,#decision-open,.fold-body .prose-list,.steps li,.prose-list li,.changes li,.test-index li,.code-example,
+  .diagram-scroll,.image,.impact-strip div,.finding,.answers label,.work-list li,.discussion,.evidence-entry{break-inside:avoid}
+
+  /* Blocks: outlined, with the colour kept as a bar or a mark. */
+  .note{border:1px solid var(--line);border-left:4px solid var(--ok)}
+  .note-warning{border-left-color:var(--hold)}
+  .note-tip{border-left-color:var(--info)}
+  .pass-when{border:1px solid var(--line);border-left:4px solid var(--ok);box-shadow:none}
+  .steps li::before,.changes li::before{border:1px solid currentColor}
+  .test-index a{padding:7px 0}
+  .change-state,.impact-strip div{border:1px solid var(--line);box-shadow:none}
+  .change-next{border-left:4px solid var(--hold)}
+  .answers label:has(:checked){border:2px solid var(--ink)}
+  .table-wrap{overflow:visible}
+  thead th{border-bottom:2px solid var(--ink);font-weight:600;color:var(--ink)}
+  .row-changed th:first-child{padding-left:10px;border-left:4px solid var(--hold);box-shadow:none}
+  .code-example{border-color:var(--line);background:var(--tint);color:var(--ink)}
+  .code-toolbar{padding:8px 16px 0;border:0;color:var(--muted)}
+  .code-example pre{padding:6px 16px 12px;overflow:visible;color:inherit;white-space:pre-wrap;overflow-wrap:anywhere}
+  /* A folded section prints open, with its label as a plain sub-heading. */
+  details{margin-top:14px;border:0}
+  summary{min-height:0;padding:0 0 6px;font-weight:600;list-style:none}
   summary::-webkit-details-marker{display:none}
-  summary::marker{content:""}
   .fold-body{padding:0}
-  .diagram-scroll{overflow:visible;border:0}
-  .diagram .diagram-svg{max-width:100%;max-height:165mm;margin:0 auto}
-  .proto,.view .answer,.question input,.carried,.response-problem,.note-rule,#ok-remaining,.decision-actions{display:none!important}
-  .proto-print{display:block}
-  .screen-pair{display:block}
-  .image img{max-height:150mm;width:auto}
-  .impact-strip div,.finding,.choice,.work-list li,.image,.discussion{break-inside:avoid}
-  .print-result,.print-notes,#print-summary{display:block;font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}
+
+  /* Figures: whole and centred. A diagram is drawn smaller than on screen, so its labels read as figure text and it
+     seldom has to move to the next page; a screenshot is kept to about a fifth of a page. */
+  .diagram-scroll{overflow:visible;border:0;background:none}
+  .diagram .diagram-svg{zoom:.7;max-width:100%;max-height:240mm;margin:8px auto 0}
+  .diagram-node:not(.diagram-added,.diagram-removed,.diagram-changed) rect{stroke:var(--muted)}
+  .image img{width:auto;max-height:70mm;margin:0 auto}
+  /* Now and proposed print side by side. A prototype prints as the screen it opens on, without its controls. */
+  .screen-pair:has(.screen-side+.screen-side){grid-template-columns:1fr 1fr;break-inside:avoid}
+  .proto-frame{height:360px}
+
+  /* Answers print as text in the section's foot. */
+  .print-result,.print-notes,#print-summary{display:block;margin:0;font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}
+  .print-result{font-weight:600}
+  .answer~.print-result{margin-top:10px}
   #print-summary:empty{display:none}
-  .doc-footer{display:block;padding:10px 0 0;border-top:1px solid #ccd0bd;font-size:11px}
+  #print-summary{margin-top:14px;padding:10px 14px;border:1px solid var(--line);orphans:4;widows:4}
 }

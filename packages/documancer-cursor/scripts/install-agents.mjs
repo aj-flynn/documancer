@@ -8,7 +8,8 @@ async function inspect(path){try{return await lstat(path)}catch(error){if(error.
 async function safeDirectory(path){const stat=await inspect(path);if(stat&&(stat.isSymbolicLink()||!stat.isDirectory()))throw new Error(`Expected a real directory, not a link or file: ${path}`)}
 
 // Installs only namespaced Cursor agent files. No global or project config is modified.
-export async function installAgents(projectRoot,{check=false}={}){
+// `previous` is the subagents folder of the skill being upgraded: a profile identical to the one it shipped is replaced.
+export async function installAgents(projectRoot,{check=false,previous}={}){
   const requested=resolve(projectRoot);await safeDirectory(requested);
   const root=await realpath(requested);
   const cursor=join(root,'.cursor'),destination=join(cursor,'agents');
@@ -23,13 +24,15 @@ export async function installAgents(projectRoot,{check=false}={}){
     if(!text.replaceAll('\r\n','\n').startsWith('---\n')||!text.includes(`name: ${name}`))throw new Error(`Invalid Cursor agent profile: ${name}`);
     const target=join(destination,name+'.md');const stat=await inspect(target);
     if(stat&&(stat.isSymbolicLink()||!stat.isFile()))throw new Error(`Refusing linked or non-file target: ${target}`);
-    if(stat&&(await readFile(target,'utf8'))!==text)throw new Error(`Existing agent differs; review and merge it explicitly before installing: ${target}`);
-    plan.push({target,text,action:stat?'unchanged':'create'});
+    const existing=stat?await readFile(target,'utf8'):text;
+    const shipped=existing!==text&&previous?await readFile(join(previous,name+'.md'),'utf8').catch(()=>null):null;
+    if(existing!==text&&existing!==shipped)throw new Error(`Existing agent differs; review and merge it explicitly before installing: ${target}`);
+    plan.push({target,text,action:!stat?'create':existing===text?'unchanged':'update'});
   }
   // Preflight every conflict before creating any files. Exclusive writes also prevent silent overwrite.
   if(!check){
     await mkdir(destination,{recursive:true});await safeDirectory(cursor);await safeDirectory(destination);
-    for(const item of plan)if(item.action==='create')await writeFile(item.target,item.text,{encoding:'utf8',flag:'wx'});
+    for(const item of plan)if(item.action!=='unchanged')await writeFile(item.target,item.text,{encoding:'utf8',flag:item.action==='create'?'wx':'w'});
   }
   return plan.map(({target,action})=>({target,action:check?'would '+action:action}));
 }

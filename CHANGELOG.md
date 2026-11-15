@@ -2,6 +2,26 @@
 
 All four editions (Codex, OpenCode, Cursor, Claude Code) share one version number.
 
+## 1.7.0 (2026-11-15)
+
+No breaking change: `schemaVersion` stays 2. Render existing documents again to get the new print layout.
+
+### Changed
+
+- **Print is one document, whatever the appearance.** Printing from Dark or either Cyberpunk appearance used to leave black page margins; every appearance now produces the same pages. The print colours and type scale are set in one place, and the theme script no longer sets an inline colour scheme that could outrank them.
+- **Print is laid out the same on any paper.** Rules for window widths now apply to screens only, so paper never picks up the phone layout.
+- **Print type and spacing.** Body text prints near 9.5pt across the full column, sections are separated by a rule with their icon and heading, the question a section asks prints as a marked block, and callouts, pass rules, step numbers and recorded answers are outlined instead of filled.
+- **Page breaks.** A section heading, its question, a sub-heading or a caption stays with what follows it; a recorded answer is never split and names its test or view ("UAT-03 result: Passed"), so it reads correctly at the top of a page; steps, callouts, tables, short lists, changes and figures are not split.
+- **Running footer.** Each sheet carries the document title and "Page n of N". In Chrome and Edge this replaces the browser's own date and address header.
+- **Document details in print** sit beside the wordmark at the top of the first page. On screen they stay in the footer.
+- **Diagrams are more compact**, on screen and in print: less empty margin, and rows sit closer unless an edge label needs the room. In print a diagram is drawn at figure size, so it rarely has to move to the next page and leave a gap.
+- **Code blocks in print** keep their language label and wrap long lines. A preview's now and proposed contracts print side by side.
+- **A preview's prototype prints** as the screen it opens on, beside the screenshot of now, in place of a note saying it could not be printed. Screenshots print centred at figure size. The decision prints what still needs an answer, and a generated summary prints without its data block.
+
+### Added
+
+- **`--upgrade`** on every installer. It builds the new version beside the backups, moves the installed skill to `documancer-backups/` next to the skills folder, puts the new one in its place, and with `--agents` replaces the profiles the old version installed. A profile edited by hand, a newer install, another edition or a folder that is not Documancer stops it before anything moves.
+
 ## 1.6.0 (2026-11-15)
 
 No breaking change: `schemaVersion` stays 2. Existing documents need no edits and render in the new card layout.

@@ -20,7 +20,7 @@
   // The options an OK applies to: the choices made, or what was on screen when no choice exists yet.
   const optionsFor=v=>Object.fromEntries(v.varies.map(id=>{const c=choice(question(id));return [id,c&&c!=='none'?c:v.ok?.options?.[id]??viewing(v)[id]];}));
   const withOptions=options=>{const text=Object.entries(options).map(([q,o])=>`${q} = ${o}`).join(', ');return text?' with '+text:'';};
-  let revision=0,generated=-1;
+  let revision=0,generated=-1,readable='';
 
   // An OK belongs to what was on screen. If a choice now differs from the option a view was OK'd with, the OK is withdrawn and the view says why.
   function reconcile(){
@@ -45,10 +45,10 @@
   function show(){
     const {open,notOK,action}=status();
     for(const q of questions){const c=choice(q);$$('[data-item]').filter(x=>x.dataset.item===q.id).forEach(mark=>{mark.textContent=c?(c==='none'?'None of these':c):'No choice';if(c)mark.dataset.result=c==='none'?'skipped':'asked';else delete mark.dataset.result;});dot(q.id,c?(c==='none'?'skipped':'asked'):null);
-      q.el.querySelector('.print-result').textContent='Choice: '+(c?optionLabel(q,c):'(none made)');q.el.querySelector('.print-notes').textContent='Note: '+(q.note.value.trim()||'(none)');}
+      q.el.querySelector('.print-result').textContent=q.id+' choice: '+(c?optionLabel(q,c):'(none made)');q.el.querySelector('.print-notes').textContent='Note: '+(q.note.value.trim()||'(none)');}
     for(const v of responding){const r=response(v);$$('[data-item]').filter(x=>x.dataset.item===v.id).forEach(mark=>{mark.textContent=r?labels[r]+(r==='ok'&&v.ok?.bulk?' (bulk)':''):'No response';if(r)mark.dataset.result=tones[r];else delete mark.dataset.result;});dot(v.id,r?tones[r]:null);
       $('.note-rule',v.el).textContent=r?rules[r]:'Required for every answer except Yes.';
-      v.el.querySelector('.print-result').textContent='Response: '+(r?labels[r]+(r==='ok'?withOptions(optionsFor(v))+(v.ok?.bulk?' (bulk Yes)':''):''):'(none given)');v.el.querySelector('.print-notes').textContent='Note: '+(v.note.value.trim()||'(none)');}
+      v.el.querySelector('.print-result').textContent=v.id+' response: '+(r?labels[r]+(r==='ok'?withOptions(optionsFor(v))+(v.ok?.bulk?' (bulk Yes)':''):''):'(none given)');v.el.querySelector('.print-notes').textContent='Note: '+(v.note.value.trim()||'(none)');}
     const total=questions.length+responding.length,done=questions.filter(choice).length+responding.filter(response).length;
     if(meter)meter.style.width=100*done/total+'%';if(barCount)barCount.textContent=done===total?'Everything is answered.':`${total-done} of ${total} to answer`;go?.toggleAttribute('data-ready',done===total);
     $$('.test-progress').forEach(p=>{const note=document.createElement('span');note.className='screen-only';note.textContent=' Responses stay in this tab only.';p.replaceChildren(done===total?'Everything is answered.':`${total-done} of ${total} still need your answer.`,note);});
@@ -62,7 +62,8 @@
     primary.textContent=action==='send-back'?'Send back':'Approve';primary.setAttribute('aria-disabled',String(!action));
     const remaining=responding.filter(v=>!response(v)).length;
     bulk.textContent=remaining?`Yes to all remaining views (${remaining})`:'No views remaining';bulk.setAttribute('aria-disabled',String(!remaining));
-    $('#print-summary').textContent=output.value?(generated===revision?output.value:'This summary is out of date. Choose an action again.\n\n'+output.value):'';
+    // Paper gets the readable part of the summary; the data block after it is for the ticket.
+    $('#print-summary').textContent=readable?(generated===revision?readable:'This summary is out of date. Choose an action again.\n\n'+readable):'';
   }
   function changed(){revision++;reconcile();show();if(output.value)state.textContent='Your responses changed after this summary was written. Choose an action again to include them.';}
 
@@ -140,14 +141,15 @@
     for(const q of questions){const c=choice(q);if(!c)continue;const note=q.note.value.trim();result.questions[q.id]=note?{choice:c,note}:{choice:c};}
     return result;
   }
+  // The summary a person reads. The text that is copied or sent adds the same response as data.
   function summary(result){
     const viewLine=v=>{const entry=result.views[v.id];return `${v.id} — ${v.title}: ${entry?labels[entry.response]+withOptions(entry.options??{})+(entry.bulk?' (bulk Yes)':''):'(no response)'}${entry?.note?'\n  Note: '+entry.note:''}`;};
     const questionLine=q=>{const entry=result.questions[q.id];return `${q.id} — ${q.title}: ${entry?optionLabel(q,entry.choice):'(no choice)'}${entry?.note?'\n  Note: '+entry.note:''}`;};
-    return [`Preview response · ${preview.ticket.repository} #${preview.ticket.number} · preview version ${preview.ticket.version}`,info.title,info.identity,'Generated: '+new Date().toISOString(),'',`Decision: ${decisions[result.decision]}`,`Overall note: ${result.note||'(none)'}`,...(questions.length?['','Questions',...questions.map(questionLine)]:[]),'','Views',...responding.map(viewLine),'','Response data',JSON.stringify(result,null,2)].join('\n');
+    return [`Preview response · ${preview.ticket.repository} #${preview.ticket.number} · preview version ${preview.ticket.version}`,info.title,info.identity,'Generated: '+new Date().toISOString(),'',`Decision: ${decisions[result.decision]}`,`Overall note: ${result.note||'(none)'}`,...(questions.length?['','Questions',...questions.map(questionLine)]:[]),'','Views',...responding.map(viewLine)].join('\n');
   }
   async function act(decision){
     const version=revision,result=build(decision);
-    output.value=summary(result);generated=version;show();
+    readable=summary(result);output.value=readable+'\n\nResponse data\n'+JSON.stringify(result,null,2);generated=version;show();
     let failure='';
     primary.disabled=reject.disabled=true;
     try{

@@ -11,7 +11,6 @@
   function apply() {
     const theme = preference === 'system' ? (lightQuery?.matches ? 'light' : 'dark') : preference;
     root.dataset.theme = theme;
-    root.style.colorScheme = theme === 'light' ? 'light' : 'dark';
     const control = document.getElementById('theme-choice');
     if (control) control.value = preference;
     const status = document.getElementById('theme-status');

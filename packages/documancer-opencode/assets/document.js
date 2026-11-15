@@ -108,7 +108,7 @@
   const state=document.querySelector('#summary-state'),output=document.querySelector('#summary-text'),button=document.querySelector('#generate-summary');let revision=0;
   const results=()=>tests.map(t=>({id:t.dataset.test,title:t.dataset.title,result:t.querySelector('input:checked').value,notes:t.querySelector('textarea').value}));
   const counts=()=>labels.map(s=>`${s}: ${results().filter(r=>r.result===s).length}`).join(' · ');
-  function printValues(){tests.forEach(t=>{t.querySelector('.print-result').textContent='Result: '+t.querySelector('input:checked').value;t.querySelector('.print-notes').textContent='Notes: '+(t.querySelector('textarea').value||'(none)')});document.querySelector('#print-summary').textContent=output.value?(revision===generatedRevision?output.value:'Summary is out of date. Generate again.\n\n'+output.value):''}
+  function printValues(){tests.forEach(t=>{t.querySelector('.print-result').textContent=t.dataset.test+' result: '+t.querySelector('input:checked').value;t.querySelector('.print-notes').textContent='Notes: '+(t.querySelector('textarea').value||'(none)')});document.querySelector('#print-summary').textContent=output.value?(revision===generatedRevision?output.value:'Summary is out of date. Generate again.\n\n'+output.value):''}
   let generatedRevision=-1;
   const indexes=[...document.querySelectorAll('.test-index')].map(list=>[...list.querySelectorAll('.test-status')]),progress=[...document.querySelectorAll('.test-progress')];
   const dots=[...document.querySelectorAll('[data-dot]')],meter=document.querySelector('.meter i'),barCount=document.querySelector('.answer-count'),go=document.querySelector('.rail-button');

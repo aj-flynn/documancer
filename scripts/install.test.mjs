@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile, lstat, cp, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, readdir, writeFile, lstat, cp, symlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
@@ -80,6 +80,46 @@ for (const edition of editions) {
     assert.equal(await readFile(join(blocked, skill), 'utf8'), 'keep');
     assert.notEqual(run('install.mjs', env, join(blocked, 'missing')).status, 0);
     assert.notEqual(run('install.mjs', env, blocked, '--force').status, 0);
+  });
+
+  test(`${env}: --upgrade replaces an older install, keeps a backup and refuses what it should not touch`, async () => {
+    const project = await mkdtemp(join(tmpdir(), `documancer-upgrade-${env}-`));
+    const installed = join(project, skill, 'skills/documancer'), profile = join(project, agents, `agents/documancer-map.${ext}`);
+    const manifest = join(installed, 'package.json'), version = JSON.parse(await readFile(join(root, 'packages', pkg, 'package.json'), 'utf8')).version;
+    const setVersion = async value => writeFile(manifest, (await readFile(manifest, 'utf8')).replace(/"version": "[^"]+"/, `"version": "${value}"`));
+    assert.match(run('install.mjs', env, project, '--upgrade').stderr, /Nothing to upgrade/);
+    await missing(installed);
+    ok(run('install.mjs', env, project, '--agents'));
+    // Make the install look like an older release: an old version, a file that release had, and the profile it shipped.
+    await setVersion('1.0.0');
+    await writeFile(join(installed, 'old-release-file.txt'), 'old');
+    for (const path of [profile, join(installed, `subagents/documancer-map.${ext}`)]) await writeFile(path, await readFile(path, 'utf8') + '\n# old release\n');
+    ok(run('install.mjs', env, project, '--agents', '--upgrade', '--check'));
+    assert.equal(JSON.parse(await readFile(manifest, 'utf8')).version, '1.0.0');
+    ok(run('install.mjs', env, project, '--agents', '--upgrade'));
+    assert.equal(JSON.parse(await readFile(manifest, 'utf8')).version, version);
+    await missing(join(installed, 'old-release-file.txt'));
+    assert.equal(await readFile(profile, 'utf8'), await readFile(join(root, 'packages', pkg, `subagents/documancer-map.${ext}`), 'utf8'));
+    const backups = await readdir(join(project, skill, 'documancer-backups'));
+    assert.equal(backups.length, 1);
+    assert.match(backups[0], /^documancer-1\.0\.0-\d{14}$/);
+    assert.equal(await readFile(join(project, skill, 'documancer-backups', backups[0], 'old-release-file.txt'), 'utf8'), 'old');
+    ok(run(join(installed, 'scripts/render.mjs'), '--check', join(installed, 'examples/technical.json')));
+    // A profile edited by hand stops the upgrade before anything moves.
+    await setVersion('1.1.0');
+    await writeFile(profile, 'my own profile');
+    assert.match(run('install.mjs', env, project, '--agents', '--upgrade').stderr, /Existing agent differs/);
+    assert.equal(JSON.parse(await readFile(manifest, 'utf8')).version, '1.1.0');
+    assert.equal(await readFile(profile, 'utf8'), 'my own profile');
+    assert.equal((await readdir(join(project, skill, 'documancer-backups'))).length, 1);
+    // A newer install, another edition and a folder that is not Documancer are left alone.
+    await setVersion('99.0.0');
+    assert.match(run('install.mjs', env, project, '--upgrade').stderr, /is newer than this package/);
+    await writeFile(manifest, JSON.stringify({ name: 'another-skill', version: '1.0.0' }));
+    assert.match(run('install.mjs', env, project, '--upgrade').stderr, /different edition/);
+    await writeFile(manifest, 'not json');
+    assert.match(run('install.mjs', env, project, '--upgrade').stderr, /Nothing to upgrade/);
+    assert.equal(await readFile(manifest, 'utf8'), 'not json');
   });
 
   test(`${env}: refuses a linked skill parent`, async t => {
