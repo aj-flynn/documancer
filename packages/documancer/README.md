@@ -1,6 +1,6 @@
 # Documancer for Codex
 
-Create technical references, user guides and human UAT plans as editable JSON and self-contained offline HTML. All editions share the Forest dark/cream light design, renderer, examples and mode references.
+Create technical references, user guides, human UAT plans and ticket previews as editable JSON and self-contained offline HTML. All editions share the card layout, its four appearances (Forest dark, cream light, Cyberpunk '80s and Cyberpunk modern), the renderer, examples and mode references.
 
 Requires Node.js 20+. No dependencies or build step are needed.
 

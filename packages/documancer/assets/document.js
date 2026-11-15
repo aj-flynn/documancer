@@ -45,7 +45,8 @@
     try{await navigator.clipboard.writeText(code.textContent);document.querySelector('.live-message').textContent='Code copied to clipboard.'}
     catch{const range=document.createRange();range.selectNodeContents(code);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);document.querySelector('.live-message').textContent='Clipboard access was blocked. Code selected; press Ctrl+C or Command+C.'}
   }));
-  const diagrams=[...document.querySelectorAll('.diagram')];
+  // Diagrams and images open in one full-window dialog.
+  const diagrams=[...document.querySelectorAll('.diagram,.image')];
   if(diagrams.length && typeof HTMLDialogElement!=='undefined' && typeof HTMLDialogElement.prototype.showModal==='function'){
     const dialog=document.createElement('dialog');dialog.className='diagram-dialog';dialog.setAttribute('aria-label','Expanded diagram');
     dialog.innerHTML='<div class="diagram-dialog-toolbar"><strong></strong><button type="button">Close diagram</button></div><p>Scroll to explore. Press Escape or Close diagram to return.</p><div class="diagram-dialog-scroll" tabindex="0" role="region" aria-label="Expanded diagram canvas"></div>';
@@ -60,12 +61,17 @@
     addEventListener('resize',fitDiagram);
     function expand(figure,trigger){
       if(dialog.open)return;
-      const svg=figure.querySelector('.diagram-svg').cloneNode(true);
-      svg.querySelectorAll('[id]').forEach(element=>element.id+='-expanded');
-      svg.setAttribute('aria-labelledby',svg.getAttribute('aria-labelledby').split(' ').map(id=>id+'-expanded').join(' '));
-      svg.querySelectorAll('[marker-end]').forEach(element=>element.setAttribute('marker-end',element.getAttribute('marker-end').replace(')', '-expanded)')));
-      const title=figure.querySelector('figcaption span').textContent;
-      dialog.querySelector('strong').textContent=title;dialog.setAttribute('aria-label',title+' — expanded diagram');
+      const image=figure.classList.contains('image'),svg=figure.querySelector(image?'img':'.diagram-svg').cloneNode(true);
+      if(image){svg.removeAttribute('width');svg.removeAttribute('height');}
+      else{
+        svg.querySelectorAll('[id]').forEach(element=>element.id+='-expanded');
+        svg.setAttribute('aria-labelledby',svg.getAttribute('aria-labelledby').split(' ').map(id=>id+'-expanded').join(' '));
+        svg.querySelectorAll('[marker-end]').forEach(element=>element.setAttribute('marker-end',element.getAttribute('marker-end').replace(')', '-expanded)')));
+      }
+      const title=figure.querySelector('figcaption span')?.textContent||svg.getAttribute('alt'),kind=image?'image':'diagram';
+      dialog.querySelector('strong').textContent=title;dialog.setAttribute('aria-label',title+' — expanded '+kind);
+      dialog.querySelector('button').textContent='Close '+kind;dialog.querySelector('p').textContent='Scroll to explore. Press Escape or Close '+kind+' to return.';
+      canvas.setAttribute('aria-label','Expanded '+kind+' canvas');
       canvas.replaceChildren(svg);opener=trigger;previousOverflow=document.body.style.overflow;
       dialog.showModal();document.body.style.overflow='hidden';fitDiagram();canvas.scrollTop=0;canvas.scrollLeft=0;
     }
@@ -83,8 +89,10 @@
     });
     addEventListener('beforeprint',closeDiagram);
     diagrams.forEach(figure=>{
-      const button=figure.querySelector('.diagram-expand'),region=figure.querySelector('.diagram-scroll');button.hidden=false;
+      const button=figure.querySelector('.diagram-expand,.image-expand');button.hidden=false;
       button.addEventListener('click',()=>expand(figure,button));
+      if(figure.classList.contains('image')){figure.querySelector('img').addEventListener('click',()=>expand(figure,button));return;}
+      const region=figure.querySelector('.diagram-scroll');
       region.classList.add('diagram-expandable');
       region.setAttribute('aria-description','Click the diagram or press Enter to expand. Arrow keys scroll.');
       region.addEventListener('click',event=>{if(event.target.closest('.diagram-svg')&&!getSelection()?.toString())expand(figure,region);});
@@ -103,7 +111,11 @@
   function printValues(){tests.forEach(t=>{t.querySelector('.print-result').textContent='Result: '+t.querySelector('input:checked').value;t.querySelector('.print-notes').textContent='Notes: '+(t.querySelector('textarea').value||'(none)')});document.querySelector('#print-summary').textContent=output.value?(revision===generatedRevision?output.value:'Summary is out of date. Generate again.\n\n'+output.value):''}
   let generatedRevision=-1;
   const indexes=[...document.querySelectorAll('.test-index')].map(list=>[...list.querySelectorAll('.test-status')]),progress=[...document.querySelectorAll('.test-progress')];
-  function showProgress(){const all=results();indexes.forEach(marks=>all.forEach((r,i)=>{marks[i].textContent=r.result;marks[i].dataset.result=r.result.toLowerCase()}));const count=`${all.filter(r=>r.result!=='Untested').length} of ${all.length} tests have a result.`;progress.forEach(p=>{const note=document.createElement('span');note.className='screen-only';note.textContent=' Results stay in this tab only.';p.replaceChildren(count,note)})}
+  const dots=[...document.querySelectorAll('[data-dot]')],meter=document.querySelector('.meter i'),barCount=document.querySelector('.answer-count'),go=document.querySelector('.rail-button');
+  function showProgress(){const all=results(),done=all.filter(r=>r.result!=='Untested').length;indexes.forEach(marks=>all.forEach((r,i)=>{marks[i].textContent=r.result;marks[i].dataset.result=r.result.toLowerCase()}));
+    dots.forEach(dot=>{const r=all.find(x=>x.id===dot.dataset.dot);if(r&&r.result!=='Untested')dot.dataset.result=r.result.toLowerCase();else delete dot.dataset.result});
+    if(meter)meter.style.width=100*done/all.length+'%';if(barCount)barCount.textContent=done===all.length?'Every test has a result.':`${all.length-done} of ${all.length} untested`;go?.toggleAttribute('data-ready',done===all.length);
+    const count=`${done} of ${all.length} tests have a result.`;progress.forEach(p=>{const note=document.createElement('span');note.className='screen-only';note.textContent=' Results stay in this tab only.';p.replaceChildren(count,note)})}
   function changed(){revision++;showProgress();document.querySelector('#result-counts').textContent=counts();if(output.value)state.textContent='Results changed. Generate summary again to include the latest results and notes.';printValues()}
   tests.forEach(t=>t.addEventListener('input',changed));document.querySelector('#result-counts').textContent=counts();printValues();showProgress();
   button.addEventListener('click',async()=>{

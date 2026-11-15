@@ -1,6 +1,6 @@
 # Use Documancer
 
-Documancer creates self-contained HTML technical references, user guides, and human UAT plans. Each document has an editable JSON source. The generated HTML embeds its styling, scripts, font, license, and configured identity, so readers can open it offline in a browser.
+Documancer creates self-contained HTML technical references, user guides, human UAT plans, and ticket previews. Each document has an editable JSON source. The generated HTML embeds its styling, scripts, font, license, and configured identity, so readers can open it offline in a browser.
 
 ## Ask Codex to create a document
 
@@ -34,6 +34,6 @@ node scripts/render.mjs --set examples/set.json dist
 
 Keep the source JSON with the exported HTML for future edits. Re-render a smaller set rather than deleting one HTML file from a previously generated set; companion navigation is determined when rendering. Technical and user guides link to each other when included, and UAT may link to included guides in new tabs. A standalone export has no companion navigation.
 
-Open the result in a browser and check content, links, both appearance themes, and narrow-screen layout. For UAT, check the result controls, notes, and Generate summary. UAT results and notes live only in the current browser session and are lost on reload; Generate summary copies the current text when clipboard access is available.
+Open the result in a browser and check content, links, the light and dark appearances, and narrow-screen layout. For UAT, check the result controls, notes, and Generate summary. UAT results and notes live only in the current browser session and are lost on reload; Generate summary copies the current text when clipboard access is available.
 
 Rendering validates the JSON structure, but it cannot verify product facts, source freshness, remote links, or that a person has passed a UAT test. See [SKILL.md](SKILL.md) for the full authoring workflow and [README.md](README.md) for package details.
