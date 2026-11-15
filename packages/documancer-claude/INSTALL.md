@@ -13,7 +13,7 @@ Add `--agents` for four optional native profiles. To add them later:
 node scripts/install-agents.mjs /path/to/project
 ```
 
-The skill goes in `.claude/skills/documancer/`; profiles go in `.claude/agents/`. No global defaults are changed. `--check` checks conflicts without writing. Existing skills, legacy forest-documentation installations and customized profiles require review; the installer never silently replaces them. Matching profiles may be reused.
+The skill goes in `.claude/skills/documancer/`; profiles go in `.claude/agents/`. No global defaults are changed. `--check` checks conflicts without writing. Existing skills and customized profiles require review; the installer never silently replaces them. Matching profiles may be reused.
 
 For manual installation, copy this entire package into `.claude/skills/documancer/`. Keep the directory name `documancer`. Copy optional profiles from `subagents/` into `.claude/agents/`. Start a new Claude Code session.
 
