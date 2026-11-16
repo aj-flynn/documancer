@@ -237,7 +237,7 @@ node scripts/render.mjs preview.json preview.html
 
 `--check` validates the JSON and every file it refers to without writing anything, and exits non-zero with the path of the field at fault. Fix the source and check again until it passes.
 
-Then open the HTML and verify, in both themes and at phone width: the problem reads without code names; every prototype shows each option and each jump link lands on its change; Expand fills the window and Escape returns; each view's question can be answered without reading further; an answer other than Yes asks for its note; the decision block lists what is unanswered. Check the print layout: prototypes are replaced by their change list and responses print as text.
+Then open the HTML and verify, in both themes and at phone width: the problem reads without code names; every prototype shows each option and each jump link lands on its change; Expand fills the window and Escape returns; each view's question can be answered without reading further; an answer other than Yes asks for its note; the decision block lists what is unanswered. Check the print layout: now and proposed print side by side, a prototype prints as the screen it opens on, and responses print as text.
 
 Responses live in the tab only and are lost on reload. Tell the reader to choose an action and keep the summary before closing.
 

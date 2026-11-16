@@ -5,4 +5,6 @@
 [data-change-n]::after{content:"Change " attr(data-change-n);position:absolute;right:8px;top:-11px;z-index:2147483647;padding:1px 6px;border-radius:3px;background:#8a5a00;color:#fff;font:600 11px/1.5 system-ui,sans-serif;font-style:normal;letter-spacing:.02em;text-transform:none;white-space:nowrap;pointer-events:none}
 [data-change-flash]{animation:documancer-flash 1.8s ease-out}
 @keyframes documancer-flash{0%,45%{box-shadow:0 0 0 6px #f3cf96,0 0 0 9px #8a5a00}100%{box-shadow:0 0 0 6px transparent,0 0 0 9px transparent}}
+/* On paper the prototype is a figure: drawn smaller, with its own colours kept. */
+@media print{html{zoom:.5;print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 @media(prefers-reduced-motion:reduce){[data-change-flash]{animation:none;box-shadow:0 0 0 6px #f3cf96,0 0 0 9px #8a5a00}}

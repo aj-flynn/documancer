@@ -196,3 +196,27 @@ test('appearance offers light, dark and the two cyberpunk themes, which never re
   const screen=html.indexOf('@media screen{'),print=html.indexOf('@media print{');assert.ok(screen>0&&screen<print);
   assert.ok(html.slice(0,screen).indexOf('data-theme=cyber')<0&&html.slice(print).indexOf('data-theme=cyber')<0,'cyberpunk rules sit inside the screen block');
 });
+test('print is the same from every appearance and on every paper size',async()=>{
+  const html=await renderDocument({...await example('uat'),title:'Plan "A" \\ </style>'});
+  const css=html.slice(html.indexOf('<style>'),html.indexOf('</style></head>')),print=css.slice(css.indexOf('@media print{'));
+  // Every colour a theme sets is set again for print, so no appearance can reach paper.
+  const tokens=block=>new Set([...block.matchAll(/(--[a-z-]+):/g)].map(m=>m[1]));
+  const themed=tokens(css.slice(css.indexOf(':root{'),css.indexOf('.tone-ok{')));
+  themed.delete('--font-family');
+  assert.ok(themed.size>15);
+  for(const token of themed)assert.ok(tokens(print).has(token),token+' is not set for print');
+  assert.match(print,/:root,html\[data-theme\]\{[^}]*color-scheme:light/);
+  // The script chooses a theme by attribute only: an inline colour scheme would outrank the print rules.
+  assert.doesNotMatch(html,/style\.colorScheme/);
+  // Window-width rules never apply to paper.
+  assert.doesNotMatch(css,/@media\s*\((min|max)-width/);
+  assert.ok([...css.matchAll(/@media screen and \((min|max)-width/g)].length>=7);
+  // Each sheet names the document and its page, and leaves no room for the browser's own header.
+  assert.match(print,/@top-left\{content:""\}@top-center\{content:""\}@top-right\{content:""\}/);
+  assert.match(print,/@bottom-right\{content:"Page " counter\(page\) " of " counter\(pages\)/);
+  assert.ok(css.endsWith('@page{@bottom-left{content:"Plan \\22 A\\22  \\5c  \\3c \\2f style\\3e "}}'),css.slice(-80));
+  // The document details print beside the wordmark; the footer that shows them on screen is not printed.
+  assert.match(html,/<header class="site-header">.*?<dl class="document-identity">.*?<\/dl><\/header>/);
+  assert.match(print,/\.doc-footer,/);
+  assert.match(print,/\.site-header \.document-identity\{display:flex/);
+});

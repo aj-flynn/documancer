@@ -73,8 +73,9 @@ function route(start,end,xs,ys,occupied,used) {
 function simplify(points){return points.filter((p,i)=>!i||i===points.length-1||!((points[i-1][0]===p[0]&&points[i+1][0]===p[0])||(points[i-1][1]===p[1]&&points[i+1][1]===p[1])));}
 function textSVG(lines,x,y,lineHeight,css){return `<text class="${css}" text-anchor="middle">${lines.map((line,i)=>`<tspan x="${x}" y="${y+(i-(lines.length-1)/2)*lineHeight}">${escape(line)}</tspan>`).join('')}</text>`;}
 export function diagramHTML(b, id) {
-  const nodeWidth=200, gapX=144, margin=112;
-  const gapY=Math.max(112,...b.edges.map(e=>edgeText(e)?wrap(edgeText(e),8).length*18+48:0));
+  const nodeWidth=200, gapX=144, margin=40;
+  // Rows sit as close as an arrow allows; a labelled edge adds room for its label.
+  const gapY=Math.max(72,...b.edges.map(e=>edgeText(e)?wrap(edgeText(e),8).length*18+72:0));
   const nodes=b.nodes.map(n=>({...n,lines:wrap(n.label,9.5)}));
   const columns=Math.max(...nodes.map(n=>n.column))+1, rows=Math.max(...nodes.map(n=>n.row))+1;
   const heights=Array.from({length:rows},(_,r)=>Math.max(92,...nodes.filter(n=>n.row===r).map(n=>n.lines.length*22+36)));

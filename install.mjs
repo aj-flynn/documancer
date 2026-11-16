@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const [environment, ...args] = process.argv.slice(2);
 const editions = { codex: 'documancer', opencode: 'documancer-opencode', cursor: 'documancer-cursor', claude: 'documancer-claude' };
 if (!Object.hasOwn(editions, environment)) {
-  console.error('Usage: node install.mjs <codex|opencode|cursor|claude> <existing-project-root> [--agents] [--check]');
+  console.error('Usage: node install.mjs <codex|opencode|cursor|claude> <existing-project-root> [--agents] [--upgrade] [--check]');
   process.exitCode = 1;
 } else {
   const script = fileURLToPath(new URL(`./packages/${editions[environment]}/install.mjs`, import.meta.url));

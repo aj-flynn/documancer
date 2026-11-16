@@ -17,6 +17,12 @@ The skill goes in `.cursor/skills/documancer/`; profiles go in `.cursor/agents/`
 
 For manual installation, copy this entire package into `.cursor/skills/documancer/`. Keep the directory name `documancer`. Copy optional profiles from `subagents/` into the agent directory. Start a fresh session.
 
-For upgrades, back up the installed skill outside skill discovery directories, compare and preserve customizations, remove the old installed folder after review, then reinstall. Merge customized profiles explicitly. To uninstall, remove only the installed `documancer` folder and optional `documancer-*` profiles. Keep authored JSON and HTML in your project documentation folder.
+To upgrade an older install, run the new package's installer with `--upgrade` (add `--agents` if you installed the profiles, and `--check` first to see the plan):
+
+```sh
+node install.mjs /path/to/project --upgrade --agents
+```
+
+It moves the installed skill to `.cursor/documancer-backups/documancer-<old version>-<time>/`, which no editor reads as a skill, then installs this version. A profile the old version installed is replaced; one you edited stops the upgrade before anything moves, so merge it by hand first. It refuses a newer install, another edition, and a folder that is not Documancer. A copy installed in your home folder upgrades the same way with your home folder as the project root. Authored JSON needs no change unless the changelog says the schema version rose; render it again to pick up the new reader. Delete the backup once you have compared any customizations. To uninstall, remove only the installed `documancer` folder and optional `documancer-*` profiles. Keep authored JSON and HTML in your project documentation folder.
 
 Use one edition per project: other editors also discover `.agents/skills`, so same-name copies may be ambiguous. See the standalone repository README for native editions and shared-editor use.
