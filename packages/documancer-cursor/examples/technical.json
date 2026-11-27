@@ -7,7 +7,7 @@
     "id": "DOCUMANCER-TECH",
     "version": "1.0",
     "date": "2026-09-19",
-    "source": "documancer package 1.7.0"
+    "source": "documancer package 1.8.0"
   },
   "overview": [
     {
@@ -53,27 +53,19 @@
           "nodes": [
             {
               "id": "source",
-              "label": "Editable JSON",
-              "row": 0,
-              "column": 0
+              "label": "Editable JSON"
             },
             {
               "id": "validate",
-              "label": "Validate source",
-              "row": 1,
-              "column": 0
+              "label": "Validate source"
             },
             {
               "id": "html",
-              "label": "Self-contained HTML",
-              "row": 2,
-              "column": 0
+              "label": "Self-contained HTML"
             },
             {
               "id": "fix",
-              "label": "Correct source",
-              "row": 1,
-              "column": 1
+              "label": "Correct source"
             }
           ],
           "edges": [

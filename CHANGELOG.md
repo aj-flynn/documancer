@@ -2,6 +2,26 @@
 
 All four editions (Codex, OpenCode, Cursor, Claude Code) share one version number.
 
+## 1.8.0 (2026-11-27)
+
+`schemaVersion` stays 2 and existing documents need no change; render them again to get the new routing. Diagram nodes may now leave out `row` and `column`, and the renderer lays the diagram out. A diagram with one box that has more edges than its sides have room for may now be rejected; the error names the edge, and the fix is to give that node fewer edges or split the diagram.
+
+### Changed
+
+- **The renderer lays out diagrams.** Leave out `row` and `column` on every node and the renderer places the nodes with a layered layout, the method of Graphviz `dot`: loops are set aside so the remaining arrows all point one way, each node goes in the layer after the nodes that point to it, each layer is ordered to cut crossings, and nodes line up with the nodes they connect to. It tries a few arrangements and keeps the one with the fewest crossings, then the smallest area. Every edge is drawn. Placing nodes by hand still works, and the technical example now uses automatic layout.
+- **Every diagram edge has a line of its own.** Edges used to merge into shared lines, so a reader could not tell which box an arrow came from. Now no two edges share any stretch of line, each edge leaves and enters a box at its own point on the box's side, and where two edges cross the horizontal one hops over the vertical one, so a crossing no longer looks like a junction. Gaps between boxes hold several parallel tracks to make room.
+- **Crowded gaps are widened.** When some edge cannot get lines of its own, the renderer widens the gaps between boxes and routes again, up to three times. A diagram that still cannot be drawn is rejected with the path of the edge, instead of being drawn ambiguously.
+- **Rows and columns go up to 15**, up from 7.
+- **Edge labels avoid other edges, boxes and labels.** A label goes on its line or just beside it; when there is no such place, the gaps are widened as for a crowded edge, so labels on two arrows running close together no longer cover each other.
+- **Arrowheads are slightly smaller** so neighbouring arrows into one box stay apart.
+
+### Added
+
+- **Optional diagram `direction`**, `down` or `right`. Without it, the renderer tries both and keeps the one with fewer crossings, then the one that needs less sideways scrolling in the text column, then top to bottom. With hand placement it sets the flow that warnings check against.
+- **Guidance on splitting a diagram** in `references/data-contract.md` and every edition's `SKILL.md`: when to split, how to cut by consumer, layer, path or subsystem without losing an edge, and when to use a table instead.
+- **Diagram layout rules** in `references/data-contract.md`, pointed to from every mode reference and every edition's `SKILL.md`: prefer automatic layout, choose a table for many-to-many relationships, keep one direction of flow, keep connected nodes adjacent, stay within about 12 nodes, 1.5 edges per node and 5 edges per node, split a dense diagram rather than leaving edges out, and connect every node.
+- **Diagram warnings.** `render.mjs`, `render.mjs --check` and `--set` print a warning to standard error, with the diagram's path, for edge crossings, an arrow against the flow that does not close a loop, more than 12 nodes, more than 1.5 edges per node, a node with more than 5 edges (unless the diagram is about that node), or a node with no edges. Warnings do not stop the render. `diagramWarnings` and `documentDiagramWarnings` are exported from `render.mjs`.
+
 ## 1.7.0 (2026-11-15)
 
 No breaking change: `schemaVersion` stays 2. Render existing documents again to get the new print layout.

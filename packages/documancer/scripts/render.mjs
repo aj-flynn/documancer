@@ -2,14 +2,15 @@ import {readFile, writeFile, mkdir, realpath} from 'node:fs/promises';
 import {resolve, dirname, relative, isAbsolute} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
-import {validateDiagram, diagramHTML} from './diagram.mjs';
+import {validateDiagram, diagramHTML, documentDiagramWarnings} from './diagram.mjs';
+export {diagramWarnings, documentDiagramWarnings} from './diagram.mjs';
 import {validatePreview, previewHTML, previewState, checkPrototype, previewFields, previewReserved} from './preview.mjs';
 
 const assets = new URL('../assets/', import.meta.url);
 const company = 'Flynn Technology LLC';
 // The JSON and the renderer move together: a document must declare exactly this schema version.
 export const schemaVersion = 2;
-export const packageVersion = '1.7.0';
+export const packageVersion = '1.8.0';
 const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 // A CSS string: every character that could end it or start an escape is written as a code point.
 const cssString = value => '"'+String(value).replace(/[^A-Za-z0-9 ]/gu, char => '\\'+char.codePointAt(0).toString(16)+' ')+'"';
@@ -58,7 +59,7 @@ function inspect(doc) {
     array(value,path);if(depth>12)fail(path,'block nesting exceeds 12 levels');
     value.forEach((b,i)=>{
       const p=`${path}[${i}]`;if(!b || typeof b!=='object')fail(p,'expected a block');
-      const fields={paragraph:['text'],heading:['text'],list:['items'],steps:['items'],code:['text','language'],table:['caption','columns','rows'],callout:['title','text'],details:['title','blocks'],links:['items'],diagram:['caption','description','nodes','edges'],image:['file','alt','caption']}[b.type];
+      const fields={paragraph:['text'],heading:['text'],list:['items'],steps:['items'],code:['text','language'],table:['caption','columns','rows'],callout:['title','text'],details:['title','blocks'],links:['items'],diagram:['caption','description','direction','nodes','edges'],image:['file','alt','caption']}[b.type];
       if(!fields)fail(p+'.type','unsupported block type');object(b,['type',...fields],p);
       if(b.type==='image'){file(b.file,p+'.file','image');string(b.alt,p+'.alt');if(b.caption!==undefined)string(b.caption,p+'.caption');}
       if(['paragraph','heading','code','callout'].includes(b.type))string(b.text,p+'.text');
@@ -260,7 +261,7 @@ export async function renderDocument(input,{companions=[],baseDirectory,preview}
 }
 
 // A set is the publication boundary: only its members become companion links.
-export async function renderSet(manifestPath,outputDirectory){
+export async function renderSet(manifestPath,outputDirectory,{warn}={}){
   const manifestFile=resolve(manifestPath),outputRoot=resolve(outputDirectory);
   const manifest=JSON.parse((await readFile(manifestFile,'utf8')).replace(/^\uFEFF/,''));
   object(manifest,['documents'],'set');array(manifest.documents,'set.documents');
@@ -274,6 +275,7 @@ export async function renderSet(manifestPath,outputDirectory){
     const doc=validate(JSON.parse((await readFile(input,'utf8')).replace(/^\uFEFF/,'')));
     if(doc.mode==='preview')fail(p+'.source','a preview is a working document and cannot be part of a set; render it on its own');
     if(modes.has(doc.mode))fail(p+'.source','a set supports one document per mode');modes.add(doc.mode);
+    if(warn)for(const w of documentDiagramWarnings(doc))warn(`${entry.source}: ${w}`);
     entries.push({doc,output,baseDirectory:dirname(input)});
   }
   const generated=await Promise.all(entries.map(async entry=>({output:entry.output,html:await renderDocument(entry.doc,{baseDirectory:entry.baseDirectory,companions:entries.filter(e=>e!==entry).map(e=>({mode:e.doc.mode,href:relative(dirname(entry.output),e.output).replaceAll('\\','/').split('/').map(encodeURIComponent).join('/')}))})})));
@@ -281,21 +283,23 @@ export async function renderSet(manifestPath,outputDirectory){
   return generated.map(e=>e.output);
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
+  // Diagram warnings go to stderr and do not fail the command.
+  const warning=message=>console.error('Warning: '+message);
   try{
     if(process.argv[2]==='--set'){
       if(process.argv.length!==5)throw new Error('Usage: node render.mjs --set <set.json> <output-directory>');
-      for(const output of await renderSet(process.argv[3],process.argv[4]))console.log('Rendered '+output);
+      for(const output of await renderSet(process.argv[3],process.argv[4],{warn:warning}))console.log('Rendered '+output);
     }else if(process.argv[2]==='--check'){
       if(process.argv.length!==4)throw new Error('Usage: node render.mjs --check <source.json>');
       const input=resolve(process.argv[3]);
-      await checkDocument(JSON.parse((await readFile(input,'utf8')).replace(/^\uFEFF/,'')),{baseDirectory:dirname(input)});console.log('Valid '+input);
+      const doc=await checkDocument(JSON.parse((await readFile(input,'utf8')).replace(/^\uFEFF/,'')),{baseDirectory:dirname(input)});console.log('Valid '+input);documentDiagramWarnings(doc).forEach(warning);
     }else{
       if(process.argv.length!==4)throw new Error('Usage: node render.mjs <source.json> <output.html> OR --set <set.json> <output-directory> OR --check <source.json>');
       const input=resolve(process.argv[2]),output=resolve(process.argv[3]);
       if(input.toLowerCase()===output.toLowerCase())throw new Error('Input and output paths must differ');
       if(!output.toLowerCase().endsWith('.html'))throw new Error('Output must have an .html extension');
       const doc=JSON.parse((await readFile(input,'utf8')).replace(/^\uFEFF/,''));
-      const html=await renderDocument(doc,{baseDirectory:dirname(input)});await mkdir(dirname(output),{recursive:true});await writeFile(output,html,'utf8');console.log('Rendered '+output);
+      const html=await renderDocument(doc,{baseDirectory:dirname(input)});await mkdir(dirname(output),{recursive:true});await writeFile(output,html,'utf8');console.log('Rendered '+output);documentDiagramWarnings(doc).forEach(warning);
     }
   }catch(error){console.error(error.message);process.exitCode=1;}
 }
