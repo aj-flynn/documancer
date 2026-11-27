@@ -2,6 +2,20 @@
 
 All four editions (Codex, OpenCode, Cursor, Claude Code) share one version number.
 
+## 1.9.0 (2026-11-27)
+
+`schemaVersion` stays 2 and existing documents need no change. Everything below is optional or relaxes a rule.
+
+### Changed
+
+- **No size limit on files beside the source.** The 1 MB limit per image or prototype and the 6 MB limit per document are gone, in `--check` and in rendering. Every other check on these files stays: the type, that the file is inside the source folder, `alt` text and the prototype rules.
+
+### Added
+
+- **Review previews.** A preview whose `ticket.kind` is `review` collects answers to independent findings, such as the places a usability tester hesitated. Each view is answered on its own; the decision block has one button, Finish review, and no Reject ticket, and the response's `decision` is `reviewed`. `impact` is optional in a review and `work` is not accepted. See "A review" in `references/preview.md` and `examples/review.json`.
+- **`cost` on a view**: what the current behaviour costs the user, shown under the ask as What this costs the user. It is checked for code names like `problem.symptom`.
+- **Wording-only screen views.** A `screen` view may leave out `proposed` when only wording changes: it shows the current screenshot, and each change gives its now and proposed text.
+
 ## 1.8.0 (2026-11-27)
 
 `schemaVersion` stays 2 and existing documents need no change; render them again to get the new routing. Diagram nodes may now leave out `row` and `column`, and the renderer lays the diagram out. A diagram with one box that has more edges than its sides have room for may now be rejected; the error names the edge, and the fix is to give that node fewer edges or split the diagram.

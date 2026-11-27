@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 2,
+  "mode": "preview",
+  "title": "Usability review: notification settings",
+  "lead": "Decide which of these places, where a first-time tester hesitated or misread, should become an issue.",
+  "identity": {
+    "id": "EXAMPLE-31-REVIEW",
+    "version": "1",
+    "date": "2026-11-27",
+    "source": "Illustrative example; main 4f2a9c1"
+  },
+  "generatedBy": {
+    "agent": "Illustrative agent",
+    "model": "illustrative-model"
+  },
+  "context": {
+    "summary": "Illustrative: the usability pass of one regression run, logged in one issue.",
+    "links": [
+      {
+        "kind": "Log issue",
+        "label": "#31 Usability review, regression run 2026-11-27",
+        "href": "https://example.com/tickets/31"
+      }
+    ]
+  },
+  "ticket": {
+    "repository": "example/example-app",
+    "number": 31,
+    "version": 1,
+    "origin": "agent",
+    "kind": "review",
+    "builtAt": {
+      "commit": "4f2a9c1d7e3b",
+      "date": "2026-11-27"
+    },
+    "surfaces": []
+  },
+  "overview": [
+    {
+      "type": "paragraph",
+      "text": "A tester who had never seen the app was asked to stop the weekly email and to check that comments still arrive. Each view below is one place where the tester hesitated or misread, with a proposed fix. Answer each view on its own: Yes makes it an issue, Drop leaves it, Later parks it."
+    }
+  ],
+  "problem": {
+    "symptom": "A first-time tester took two wrong turns on the notification screen before finding what they wanted.",
+    "evidence": [
+      {
+        "type": "paragraph",
+        "text": "The run gave the tester two tasks on the notification screen. Both were finished, one after a hesitation and one after a misreading."
+      }
+    ],
+    "impact": "New people who cannot tell what an email contains switch it off, or leave on email they do not want.",
+    "source": "Usability pass of the regression run on 2026-11-27."
+  },
+  "views": [
+    {
+      "id": "u1",
+      "kind": "screen",
+      "title": "Weekly summary switch",
+      "ask": "Should the switch say what the weekly summary contains?",
+      "cost": "The tester stopped for about twenty seconds, unsure whether the weekly summary includes comments, and left it on to be safe.",
+      "basis": "screenshot",
+      "now": {
+        "image": "preview/notifications-now.png",
+        "alt": "The Notifications screen: an Email panel with two switches, Comments on my documents and Weekly summary, both on."
+      },
+      "changes": [
+        {
+          "id": "summary-label",
+          "label": "The label of the second switch",
+          "now": "Weekly summary",
+          "proposed": "Weekly summary of activity in your workspaces (not comments)"
+        }
+      ],
+      "notes": [
+        {
+          "type": "paragraph",
+          "text": "Tester, thinking aloud: \"Does weekly summary mean I stop getting comments too?\""
+        }
+      ]
+    },
+    {
+      "id": "u2",
+      "kind": "screen",
+      "title": "Comments switch",
+      "ask": "Should the comments switch name whose comments it covers?",
+      "cost": "The tester read the switch as covering every comment in the workspace and expected it to be noisy.",
+      "basis": "screenshot",
+      "now": {
+        "image": "preview/notifications-now.png",
+        "alt": "The Notifications screen, with the first switch, Comments on my documents, on."
+      },
+      "changes": [
+        {
+          "id": "comments-hint",
+          "label": "A line under the first switch",
+          "now": "No line",
+          "proposed": "Only comments on documents you own or follow"
+        }
+      ]
+    },
+    {
+      "id": "u3",
+      "kind": "screen",
+      "title": "Email panel heading",
+      "basis": "screenshot",
+      "informational": true,
+      "now": {
+        "image": "preview/notifications-now.png",
+        "alt": "The Notifications screen, with the Email panel heading at the top."
+      },
+      "notes": [
+        {
+          "type": "paragraph",
+          "text": "The tester paused at the panel heading, then went straight on. Nothing is proposed; it is shown so the pause is on record."
+        }
+      ]
+    }
+  ],
+  "leaveAsIs": "The observations stay in log issue #31 and no issue is filed."
+}

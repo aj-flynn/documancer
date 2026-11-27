@@ -4,6 +4,8 @@ Use `mode: "preview"` to show what a ticket would change **before** anything is 
 
 Shared fields (`schemaVersion`, `title`, `lead`, `identity`, `overview`, `context`, `brand`, `generatedBy`, `sources`) and content blocks are defined in [data-contract.md](data-contract.md). This file defines everything specific to preview. See `../examples/preview.json` with its files in `../examples/preview/`.
 
+A **review** is a preview of a set of independent findings, such as the places where a usability tester hesitated, rather than one ticket's change. Each view is answered on its own and nothing is approved as a whole. See [A review](#a-review) and `../examples/review.json`.
+
 ## What the reader gets
 
 The renderer fixes the order:
@@ -72,7 +74,7 @@ Each view offers five answers: Yes, build this; Change it; Ask first; Drop it; L
 }
 ```
 
-Required: `ticket`, `overview`, `problem`, `impact`, `views` (at least one), `leaveAsIs`. Optional: `findings`, `questions`, `work`. Not accepted in this mode: `sections`, `setup`, `tests`, `evidence`, `related`. A preview cannot be part of a set.
+Required: `ticket`, `overview`, `problem`, `impact`, `views` (at least one), `leaveAsIs`. Optional: `findings`, `questions`, `work`. In a review, `impact` is optional and `work` is not accepted. Not accepted in this mode: `sections`, `setup`, `tests`, `evidence`, `related`. A preview cannot be part of a set.
 
 ### `ticket`
 
@@ -88,7 +90,7 @@ Required: `ticket`, `overview`, `problem`, `impact`, `views` (at least one), `le
 }
 ```
 
-All fields are required. `repository` is `owner/name`. `number` and `version` are positive integers; `version` is this preview's revision, starts at 1, and is separate from `identity.version`. Both are written into every response, because a host refuses a response to an older preview. `origin` is `agent` or `founder` and is shown beside the problem. `kind` is a nonempty string. `builtAt.commit` is 7 to 40 hexadecimal characters and is shown in the footer with `builtAt.date` (YYYY-MM-DD). `surfaces` is an array of strings and may be empty.
+All fields are required. `repository` is `owner/name`. `number` and `version` are positive integers; `version` is this preview's revision, starts at 1, and is separate from `identity.version`. Both are written into every response, because a host refuses a response to an older preview. `origin` is `agent` or `founder` and is shown beside the problem. `kind` is a nonempty string; the value `review` makes the preview a review (see [A review](#a-review)). `builtAt.commit` is 7 to 40 hexadecimal characters and is shown in the footer with `builtAt.date` (YYYY-MM-DD). `surfaces` is an array of strings and may be empty.
 
 ### `problem`
 
@@ -150,6 +152,7 @@ Fields every view has:
   "kind": "screen",
   "title": "Workspace Bill preview",
   "ask": "Should the first section show its heading beside the title?",
+  "cost": "Readers cannot tell which Act a new Section belongs to.",
   "basis": "screenshot",
   "informational": false,
   "files": ["packages/drafting/src/bill-lead-in.ts"],
@@ -168,6 +171,7 @@ Fields every view has:
 
 - `kind`: `screen`, `examples`, `data`, `access`, `flow`, `contract` or `operations`. It selects the layout and the fields below.
 - `ask`: the one question the reader answers on this view, as a sentence. Not allowed on an informational view.
+- `cost`: optional. What the current behaviour costs the user, in their terms, as one or two sentences. Shown directly under the ask as **What this costs the user**. Like `problem.symptom`, it may not contain a file path or code name.
 - `basis`: how "now" was obtained: `screenshot`, `generated`, `read` (from code) or `inferred`. Shown under Behind this.
 - `informational`: `true` for a view that changes nothing. It may have no `ask` and no `changes`.
 - `files`: source files behind the view, shown folded away.
@@ -181,7 +185,7 @@ Kind-specific fields:
 
 | Kind | Fields |
 | --- | --- |
-| `screen` | `now`: `{ "image", "alt" }`. `proposed`: `{ "prototype" }` or, for a small change, `{ "image", "alt" }`. `now` may be omitted for a screen that does not exist yet. An informational screen has `now` and no `proposed`. |
+| `screen` | `now`: `{ "image", "alt" }`. `proposed`: `{ "prototype" }` or, for a small change, `{ "image", "alt" }`. `now` may be omitted for a screen that does not exist yet. A change of wording alone may omit `proposed`: the view then needs `now`, and every entry in `changes` gives `now` and `proposed` text; the card shows the screenshot and says only the listed wording changes. An informational screen has `now` and no `proposed`. |
 | `examples` | `columns`: names of the inputs. `rows`: `[{ "id", "inputs", "now", "proposed", "changed" }]` with one input string per column, `now` and `proposed` as strings, `changed` as true or false. Row IDs are unique within the view. |
 | `data` | `tables`: `[{ "name", "change", "columns": [{ "name", "type", "nullable", "change", "was" }] }]`. `change` is `added`, `removed`, `changed` or `unchanged`; `nullable` is true or false; `was` is required when a column is `changed`. `existingRows`: what happens to rows already stored. Optional `diagram`. |
 | `access` | `actors` and `actions`: arrays of names. `cells`: `[{ "actor", "action", "now", "proposed", "condition" }]` with `now` and `proposed` as `yes` or `no` and an optional `condition`. A pair with no cell is shown as not applicable. |
@@ -213,7 +217,7 @@ Two things are deliberately **not** in the JSON: a content hash per view, which 
 
 ## Files beside the source
 
-Paths are relative to the folder holding the source JSON, use forward slashes, and may not leave that folder. Each file may be at most 1 MB, and all files in one document at most 6 MB.
+Paths are relative to the folder holding the source JSON, use forward slashes, and may not leave that folder. There is no size limit on a file or on the files in one document; each is embedded whole, so the HTML grows with them.
 
 - **Images** (`now.image`, `proposed.image`, and `image` blocks): PNG, JPEG or WebP, with required `alt` text that says what the screen shows.
 - **Prototypes** (`proposed.prototype`): one `.html` file per view.
@@ -241,6 +245,23 @@ Then open the HTML and verify, in both themes and at phone width: the problem re
 
 Responses live in the tab only and are lost on reload. Tell the reader to choose an action and keep the summary before closing.
 
+## A review
+
+Set `ticket.kind` to `"review"` when the preview collects a reader's answer to several independent findings, for example one view per place a first-time tester hesitated or misread during a usability run. The reader answers each view; their Yes, Drop and Later are the decision.
+
+What changes from a ticket preview:
+
+- `ticket` names the issue the review is logged in: `number` is that issue, `origin` is usually `agent`, `builtAt` is the build that was tested, and `surfaces` may be empty.
+- `problem` describes the review as a whole: `symptom` says in one sentence what testers ran into, `evidence` says what was run, `impact` says what the findings cost users together, and `source` names the run.
+- `impact` is optional. Leave it out unless the five answers mean something for the set as a whole.
+- `work` is not accepted. The host files an issue for each view answered Yes.
+- One view per finding. Give each its own `cost`, and write `ask` so that Yes means "make this an issue and build what is shown". Put what the tester did or said in `notes`.
+- A finding that only needs different wording is a `screen` view with `now` and no `proposed`, whose `changes` give the words now and proposed. Use a prototype or a proposed image only when the screen itself changes.
+- A place where a tester paused but nothing should change is an informational view, so the observation is on record without needing an answer.
+- The decision block has one button, **Finish review**, and no Reject ticket. It is available once at least one view is answered and every answer that needs a note has one; views left unanswered stay unanswered. The overall note is optional. The response's `decision` is `reviewed`.
+
+Everything else, including questions, view kinds, files and the response format, is the same as for a ticket preview.
+
 ## For a host that renders previews
 
 `render.mjs` exports:
@@ -249,7 +270,7 @@ Responses live in the tab only and are lost on reload. Tell the reader to choose
 - `renderDocument(doc, { baseDirectory, preview: { responses, submitUrl } })`. `responses` is `{ "views": { id: { "response", "note", "options", "bulk" } }, "questions": { id: { "choice", "note" } } }` from an earlier version; they are pre-filled and marked as carried over. Entries for views or questions that no longer exist are ignored. `submitUrl` is an absolute http(s) address.
 - `viewHashes(doc, { baseDirectory })`: one SHA-256 per view ID, from the view's fields and the bytes of its files. `discussion` is excluded, so answering a question does not change the hash.
 
-With `submitUrl`, choosing Approve, Send back or Reject ticket sends one `POST` with `Content-Type: application/json`; a page opened from a file needs the host to answer the CORS preflight. Without it, or when sending fails, the same click writes a text summary ending in the same JSON and copies it. The response:
+With `submitUrl`, choosing Approve, Send back, Reject ticket or Finish review sends one `POST` with `Content-Type: application/json`; a page opened from a file needs the host to answer the CORS preflight. Without it, or when sending fails, the same click writes a text summary ending in the same JSON and copies it. The response:
 
 ```json
 {
@@ -266,4 +287,4 @@ With `submitUrl`, choosing Approve, Send back or Reject ticket sends one `POST` 
 }
 ```
 
-`decision` is `approve`, `send-back` or `reject`. A view the reader did not respond to is absent. `options` records the option in force for each question the view varies by. A view marked by Yes to all remaining carries `"bulk": true`, and `okRemaining` is then true. A question's `choice` is an option ID or `none`. A Yes (`ok`) is withdrawn on the page if the reader later chooses a different option from the one the view was answered with.
+`decision` is `approve`, `send-back` or `reject`, or `reviewed` for a review. A view the reader did not respond to is absent. `options` records the option in force for each question the view varies by. A view marked by Yes to all remaining carries `"bulk": true`, and `okRemaining` is then true. A question's `choice` is an option ID or `none`. A Yes (`ok`) is withdrawn on the page if the reader later chooses a different option from the one the view was answered with.
