@@ -57,7 +57,7 @@ Test IDs begin with a letter and contain letters, digits or hyphens. IDs must be
 | `callout` | `title`, `text` |
 | `details` | `title`, `blocks`: nonempty block array |
 | `links` | `items`: nonempty `{ "label", "href" }` array |
-| `diagram` | `caption`, `description`, `nodes`, `edges`: static SVG generated from the grid below |
+| `diagram` | `caption`, `description`, `nodes`, `edges`, optional `direction`: static SVG laid out and routed by the renderer |
 | `image` | `file`: path to a PNG, JPEG or WebP beside the source; `alt`: required text alternative; optional `caption` |
 
 ### Diagrams
@@ -70,10 +70,10 @@ Use diagrams when relationships, branches, sequence or state changes are easier 
   "caption": "Document generation",
   "description": "Source JSON is validated before HTML is written. Invalid input must be corrected before trying again.",
   "nodes": [
-    { "id": "source", "label": "Editable JSON", "row": 0, "column": 0 },
-    { "id": "validate", "label": "Validate source", "row": 1, "column": 0 },
-    { "id": "html", "label": "Self-contained HTML", "row": 2, "column": 0 },
-    { "id": "fix", "label": "Correct source", "row": 1, "column": 1 }
+    { "id": "source", "label": "Editable JSON" },
+    { "id": "validate", "label": "Validate source" },
+    { "id": "html", "label": "Self-contained HTML" },
+    { "id": "fix", "label": "Correct source" }
   ],
   "edges": [
     { "from": "source", "to": "validate" },
@@ -84,11 +84,46 @@ Use diagrams when relationships, branches, sequence or state changes are easier 
 }
 ```
 
-Each diagram has 1–40 nodes and 0–80 directed edges. Each node requires a unique lowercase-slug `id`, a nonempty `label` of at most 180 Unicode code points, and integer `row`/`column` positions from 0 to 7. Positions start at the top left; two nodes cannot occupy one cell. IDs are local to the diagram. Each edge requires existing `from`/`to` node IDs and an optional nonempty `label` of at most 48 code points. Duplicate directed edges and self edges are rejected; reverse edges and cycles between different nodes are supported. Unknown fields are rejected.
+Each diagram has 1–40 nodes and 0–80 directed edges. Each node requires a unique lowercase-slug `id` and a nonempty `label` of at most 180 Unicode code points. IDs are local to the diagram. Optional `direction` is `down` or `right`. Without it, the renderer tries both: it keeps the one with fewer crossings, and on a tie the one that fits the text column (about 800 pixels) without scrolling sideways, since a tall diagram scrolls with the page; otherwise top to bottom. Leave out `row` and `column` and the renderer places every node itself (see below). To place nodes by hand instead, give every node integer `row` and `column` positions from 0 to 15; positions start at the top left, two nodes cannot occupy one cell, and a diagram cannot mix placed and unplaced nodes. Each edge requires existing `from`/`to` node IDs and an optional nonempty `label` of at most 48 code points. Duplicate directed edges and self edges are rejected; reverse edges and cycles between different nodes are supported. Unknown fields are rejected.
 
 A node or an edge may carry an optional `change`: `added`, `removed` or `changed`. It marks what a proposal alters, in any mode. The mark is drawn with colour, line style and a text tag (a tag above a node, the word in brackets on an edge label), and is repeated in the text alternative. Leave `change` off everything that stays as it is.
 
-Place related nodes in neighboring cells. The renderer sizes rows for wrapped labels and routes orthogonal arrows around occupied boxes. It does not infer a chronology, decision, or relationship from grid placement: author every intended arrow explicitly, and label decision branches. Edge crossings or shared segments are possible in dense diagrams; inspect the export and rearrange or split diagrams when ambiguous. Use short labels and explain details in the description or nearby prose. This is a box-and-arrow vocabulary, not UML or a sequence-diagram grammar.
+#### Laying out a diagram
+
+Leave out `row` and `column` and let the renderer lay the diagram out. It uses a layered layout, the method of Graphviz `dot`: every arrow points in the diagram's `direction` except those that close a loop, such as a retry; each node goes in the layer after the nodes that point to it, moved toward the side where most of its edges go; each layer is ordered to cut crossings; and nodes line up under the nodes they connect to. It tries a few arrangements and keeps the one with the fewest crossings, then the smallest area. Every edge is drawn; none is ever dropped. Set `direction` only to force one: `right` suits a long chain such as a pipeline that would otherwise be very tall. Place nodes by hand only when the reading order matters more than short arrows, for example to match a screen or a familiar picture, and then follow rules 2 and 3 yourself.
+
+1. **Decide first whether a diagram is the right form.** A diagram suits a flow, a branch, a lifecycle, or a few components and how they connect. A many-to-many relationship such as "which project references which" is clearer as a table with one row per item and a column listing what it depends on. Use a diagram for that only when it is small, or to show one item's dependencies.
+2. **Pick one direction of flow** and keep every arrow pointing that way. For dependencies, the things that use others go first and the foundations last. An arrow against the flow is right only when it closes a loop.
+3. **Put connected nodes next to each other**: each node in the row (or column) after the nodes that point to it, under or beside the nodes it connects to, so arrows run short and straight.
+4. **Keep it small.** Aim for at most 12 nodes, no more than about 1.5 edges per node, and no node with more than 5 edges. A node with many edges deserves a diagram of its own; a dense system deserves several focused diagrams. Split a diagram rather than leaving edges out: a diagram that omits real relationships misleads.
+5. **Connect every node.** A box with no arrows says nothing about how it fits; describe it in prose instead.
+6. **Label every branch** leaving a decision, keep labels short, and explain detail in the description or nearby prose.
+
+The renderer routes orthogonal arrows around boxes. Each edge leaves and enters a box at its own point and never shares a line with another edge; where two edges must cross, the horizontal one hops over the vertical one. When the gaps between boxes are too crowded, the renderer widens them and routes again. A diagram in which some edge still cannot be drawn on lines of its own, usually because one box has more edges than its sides have room for, is rejected with the path of that edge: give that node fewer edges or split the diagram. Grid placement carries no meaning by itself, so author every intended arrow explicitly. This is a box-and-arrow vocabulary, not UML or a sequence-diagram grammar.
+
+#### Splitting a diagram
+
+Split a diagram when it gives any of these warnings: crossings remaining after automatic layout, more than 12 nodes, more than 1.5 edges per node, or a node with more than 5 edges that is not the subject of the diagram. Also split it when readers will come with different questions, such as "what does the API use?" and "what does the data layer depend on?". A dense diagram answers neither.
+
+Never split by leaving edges out. Cut along a seam the reader already understands:
+
+- **By consumer.** One diagram per top-level item, showing what it uses: a project and its references, a service and its calls. A diagram about one node may give that node any number of edges.
+- **By layer.** Applications to libraries in one diagram, libraries to shared foundations in another.
+- **By path.** The main path of a flow or lifecycle in one diagram, and failure, cancellation or recovery paths in another.
+- **By subsystem.** One diagram per area, plus a small overview with one box per area and an arrow wherever any edge crosses between them.
+
+Then check:
+
+1. **Every edge appears in at least one diagram.** Count them: the edges in the parts must add up to at least the edges of the whole. A node may appear in several parts.
+2. **Each part passes on its own**, with no warnings left unexplained.
+3. **Each caption names its slice**, such as "What the API references", and each description says where the rest is.
+4. **The parts are introduced together**, in one section or a `details` block, and in an order that tells the reader where to start.
+
+When no seam gives parts that pass, use a table instead: one row per item, and a column listing what it connects to.
+
+For example, a diagram of eleven projects and 25 references drawn as one diagram keeps 14 crossings, and four projects have six or more edges. Split by consumer, it becomes four clean diagrams that cover all 25 references once each: what the API references (8), what the job references (6), what the PA site references (4), and what the libraries reference (7).
+
+`render.mjs` and `render.mjs --check` print a warning to standard error, with the path of the diagram, when a diagram breaks rules 2 to 5: edge crossings, an arrow against the flow that is not a loop back, more than 12 nodes, more than 1.5 edges per node, a node with more than 5 edges unless the diagram is about that node, or a node with no edges. Warnings do not stop the render. Resolve them, or be ready to say why a warning is acceptable for that diagram.
 
 Diagrams work anywhere blocks are accepted, including nested details and UAT prerequisites. Verify the final HTML in both themes and at narrow widths: readable labels, correct arrow directions, no clipping or ambiguous overlaps, keyboard scrolling, and no page-wide horizontal overflow. Successful CLI rendering alone is not visual verification.
 
@@ -116,4 +151,4 @@ Set `schemaVersion` to `2`. No field was removed or renamed. Version 2 adds the 
 
 ## Added since schemaVersion 2 was introduced
 
-These additions need no change to an existing version 2 document. Package 1.6.0 added `mode: "preview"` with its fields, the `image` block, and the optional `change` field on diagram nodes and edges. Five more IDs are reserved in preview mode only: `problem`, `findings`, `impact`, `work` and `decision`.
+These additions need no change to an existing version 2 document. Package 1.6.0 added `mode: "preview"` with its fields, the `image` block, and the optional `change` field on diagram nodes and edges. Five more IDs are reserved in preview mode only: `problem`, `findings`, `impact`, `work` and `decision`. Package 1.8.0 made diagram `row` and `column` optional, so the renderer lays out a diagram that omits them, added the optional `direction`, and raised the highest row and column to 15.
