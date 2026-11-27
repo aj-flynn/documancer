@@ -52,20 +52,49 @@ test('a malformed preview is rejected with the path of the field at fault',async
   const guide=await example('technical');guide.views=[];assert.throws(()=>validate(guide),/^Error: views: only supported in preview mode/);
 });
 
+test('a review is answered view by view: no impact or work, no ticket to reject, and wording changes need no new screen',async()=>{
+  const doc=await example('review');assert.equal(await checkDocument(doc,{baseDirectory:examples}),doc);
+  const html=await renderDocument(doc,{baseDirectory:examples}),data=JSON.parse(html.match(/<script type="application\/json" id="document-data">([\s\S]*?)<\/script>/)[1]).preview;
+  assert.equal(data.review,true);assert.doesNotMatch(html,/id="decision-reject"|id="impact"|id="work"/);
+  assert.match(html,/id="decision-primary"[^>]*>Finish review<\/button>/);assert.match(html,/Why this review exists/);
+  assert.match(html,/<strong>What this costs the user<\/strong><p>The tester stopped for about twenty seconds/);
+  assert.match(html,/<h3>Proposed<\/h3><p>The same screen\. Only the wording listed under What changes is different\.<\/p>/);
+  assert.match(html,/<b>Now<\/b>Weekly summary<\/div>.*<b>Proposed<\/b>Weekly summary of activity/);
+  const ticket=await renderDocument(await preview(),{baseDirectory:examples});assert.match(ticket,/id="decision-reject"/);assert.equal(JSON.parse(ticket.match(/id="document-data">([\s\S]*?)<\/script>/)[1]).preview.review,false);
+  const cases=[
+    [d=>d.work=[{title:'x',outcome:'y',size:'small'}],/^Error: work: a review creates no work/],
+    [d=>d.views[0].cost='The labelText is unclear',/^Error: views\[0\]\.cost: "labelText"/],[d=>d.views[0].cost='',/^Error: views\[0\]\.cost:/],
+    [d=>delete d.views[0].now,/^Error: views\[0\]\.proposed: expected a prototype or an image/],
+    [d=>{delete d.views[1].changes[0].now;delete d.views[1].changes[0].proposed;},/^Error: views\[1\]\.changes\[0\]: without a proposed screen/],
+    [d=>{d.ticket.kind='change';},/^Error: impact:/],
+  ];
+  for(const [change,expected] of cases){const d=await example('review');change(d);assert.throws(()=>validate(d),expected,String(change));}
+  const withImpact=await preview();withImpact.ticket.kind='review';delete withImpact.work;assert.ok(validate(withImpact),'a review may still give an impact');
+  const cost=await preview();cost.views[0].cost='People miss comments.';assert.ok(validate(cost),'any preview may give a view its cost');
+});
+
 test('the symptom check allows quoted output and plain language',()=>{
   assert.equal(codeName('A new Section prints as `Sec. 1. Scope`; Indiana bills print `Sec. 1.` Seen since 11/15/2026 and/or earlier.'),null);
   for(const text of ['see packages/drafting/src/x.ts','bill-lead-in.ts is wrong','the lead_in value','call format()'])assert.ok(codeName(text),text);
 });
 
-test('files are read only from the source folder, within size limits and as the type they claim',async()=>{
+test('files are read only from the source folder and as the type they claim, at any size',async()=>{
   const doc=await preview();
   await assert.rejects(renderDocument(doc),/problem\.evidence\[1\]\.file: this document refers to a file beside its source/);
   const dir=await previewFolder();assert.equal(await checkDocument(doc,{baseDirectory:dir}),doc);
   const missing=structuredClone(doc);missing.views[0].now.image='preview/missing.png';await assert.rejects(checkDocument(missing,{baseDirectory:dir}),/views\[0\]\.now\.image: file not found/);
   await assert.rejects(checkDocument(doc,{baseDirectory:join(dir,'preview')}),/file not found/);
   await writeFile(join(dir,'preview/notifications-now.png'),'not an image');await assert.rejects(checkDocument(doc,{baseDirectory:dir}),/is not a valid PNG image/);
-  await writeFile(join(dir,'preview/notifications-now.png'),Buffer.concat([await readFile(join(examples,'preview/notifications-now.png')),Buffer.alloc(1024*1024)]));
-  await assert.rejects(checkDocument(doc,{baseDirectory:dir}),/the limit for one image is 1024 KB/);
+  // No size limit: a 3 MB image and a 4 MB prototype, 7 MB of embedded files in all.
+  const big=await previewFolder(),png=await readFile(join(examples,'preview/notifications-now.png'));
+  await writeFile(join(big,'preview/notifications-now.png'),Buffer.concat([png,Buffer.alloc(3*1024*1024)]));
+  await writeFile(join(big,'preview/notifications-proposed.html'),(await readFile(join(examples,'preview/notifications-proposed.html'),'utf8')).replace('</main>','<!--'+'x'.repeat(4*1024*1024)+'--></main>'));
+  const large=structuredClone(doc);assert.equal(await checkDocument(large,{baseDirectory:big}),large);
+  const html=await renderDocument(large,{baseDirectory:big});assert.ok(html.length>8*1024*1024,`rendered ${html.length} bytes`);assert.ok(html.includes('x'.repeat(4*1024*1024)),'the prototype is embedded whole');
+  const cli=fileURLToPath(new URL('./render.mjs',import.meta.url)),source=join(big,'preview.json');await writeFile(source,JSON.stringify(doc));
+  const checked=spawnSync(process.execPath,[cli,'--check',source],{encoding:'utf8'});assert.equal(checked.status,0,checked.stderr);assert.match(checked.stdout,/^Valid /);
+  const rendered=spawnSync(process.execPath,[cli,source,join(big,'preview.html')],{encoding:'utf8'});assert.equal(rendered.status,0,rendered.stderr);
+  assert.ok((await readFile(join(big,'preview.html'))).length>8*1024*1024);
 });
 
 test('a prototype must be self-contained and its change points must match the view',async()=>{

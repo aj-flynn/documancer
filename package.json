@@ -1,6 +1,6 @@
 {
   "name": "documancer-workspace",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "private": true,
   "type": "module",
   "engines": { "node": ">=20" },
@@ -8,6 +8,6 @@
     "test": "node --test scripts/*.test.mjs packages/documancer/scripts/*.test.mjs",
     "sync": "node scripts/sync-shared.mjs",
     "check": "node scripts/sync-shared.mjs --check",
-    "examples": "node packages/documancer/scripts/render.mjs --set packages/documancer/examples/set.json dist/examples && node packages/documancer/scripts/render.mjs packages/documancer/examples/preview.json dist/examples/preview.html"
+    "examples": "node packages/documancer/scripts/render.mjs --set packages/documancer/examples/set.json dist/examples && node packages/documancer/scripts/render.mjs packages/documancer/examples/preview.json dist/examples/preview.html && node packages/documancer/scripts/render.mjs packages/documancer/examples/review.json dist/examples/review.html"
   }
 }

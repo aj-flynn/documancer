@@ -3,7 +3,7 @@
 (() => {
   const info=JSON.parse(document.querySelector('#document-data').textContent),preview=info.preview;
   const $=(selector,root=document)=>root.querySelector(selector),$$=(selector,root=document)=>[...root.querySelectorAll(selector)];
-  const labels={ok:'Yes',change:'Change',question:'Question',drop:'Drop',later:'Later'},tones={ok:'passed',change:'skipped',later:'skipped',question:'asked',drop:'failed'},rules={ok:'Optional.',change:'Required: what should change?',question:'Required: what is your question?',drop:'Required: why drop it?',later:'Required: why later, and what should happen first?'},decisions={approve:'Approve','send-back':'Send back',reject:'Reject ticket'};
+  const labels={ok:'Yes',change:'Change',question:'Question',drop:'Drop',later:'Later'},tones={ok:'passed',change:'skipped',later:'skipped',question:'asked',drop:'failed'},rules={ok:'Optional.',change:'Required: what should change?',question:'Required: what is your question?',drop:'Required: why drop it?',later:'Required: why later, and what should happen first?'},decisions={approve:'Approve','send-back':'Send back',reject:'Reject ticket',reviewed:'Finish review'};
   const live=$('.live-message'),overall=$('#decision-note'),primary=$('#decision-primary'),reject=$('#decision-reject'),bulk=$('#ok-remaining');
   const dots=$$('[data-dot]'),meter=$('.meter i'),barCount=$('.answer-count'),go=$('.rail-button');
   const dot=(id,tone)=>dots.filter(x=>x.dataset.dot===id).forEach(x=>{if(tone)x.dataset.result=tone;else delete x.dataset.result;});
@@ -40,6 +40,8 @@
     for(const q of questions){const c=choice(q);if(!c)open.push({id:q.id,text:`${q.id} has no choice`});else if(c==='none'&&!q.note.value.trim())open.push({id:q.id,text:`${q.id}: None of these needs a note`,note:true});}
     for(const v of responding){const r=response(v);if(!r)open.push({id:v.id,text:`${v.id} has no answer`});else if(r!=='ok'&&!v.note.value.trim())open.push({id:v.id,text:`${v.id}: ${labels[r]} needs a note`,note:true});}
     const notOK=responding.some(v=>response(v)&&response(v)!=='ok')||questions.some(q=>choice(q)==='none');
+    // A review finishes once something is answered and no answer lacks its note; unanswered views stay unanswered.
+    if(preview.review)return {open,notOK,action:!open.some(o=>o.note)&&(responding.some(response)||questions.some(choice))?'reviewed':null};
     return {open,notOK,action:!open.length&&!notOK?'approve':notOK&&!open.some(o=>o.note)?'send-back':null};
   }
   function show(){
@@ -57,9 +59,9 @@
       text.textContent=`Viewing ${optionLabel(q,seen)}. `+(!c?'Not chosen yet.':c==='none'?'You chose None of these.':c===seen?'This is your choice.':`Your choice is ${c}.`);
     }
     const waiting=open.filter(o=>!o.note).length;
-    counts.textContent=action==='approve'?'Everything is answered Yes. You can approve.':action==='send-back'?(waiting?`You can send this back now. ${waiting} item${waiting===1?' has':'s have'} no response and will stay unanswered.`:'Everything is answered. Some answers are not Yes, so this goes back to the agent.'):`${open.length} item${open.length===1?' needs':'s need'} you before you can approve:`;
+    counts.textContent=preview.review?(action?(waiting?`You can finish the review now. ${waiting} item${waiting===1?' has':'s have'} no answer and will stay unanswered.`:'Everything is answered. You can finish the review.'):`${open.length} item${open.length===1?' needs':'s need'} you before you can finish:`):action==='approve'?'Everything is answered Yes. You can approve.':action==='send-back'?(waiting?`You can send this back now. ${waiting} item${waiting===1?' has':'s have'} no response and will stay unanswered.`:'Everything is answered. Some answers are not Yes, so this goes back to the agent.'):`${open.length} item${open.length===1?' needs':'s need'} you before you can approve:`;
     openList.replaceChildren(...open.map(o=>{const item=document.createElement('li'),link=document.createElement('a');link.href='#'+o.id;link.textContent=o.text;item.append(link);return item;}));
-    primary.textContent=action==='send-back'?'Send back':'Approve';primary.setAttribute('aria-disabled',String(!action));
+    primary.textContent=preview.review?'Finish review':action==='send-back'?'Send back':'Approve';primary.setAttribute('aria-disabled',String(!action));
     const remaining=responding.filter(v=>!response(v)).length;
     bulk.textContent=remaining?`Yes to all remaining views (${remaining})`:'No views remaining';bulk.setAttribute('aria-disabled',String(!remaining));
     // Paper gets the readable part of the summary; the data block after it is for the ticket.
@@ -151,7 +153,7 @@
     const version=revision,result=build(decision);
     readable=summary(result);output.value=readable+'\n\nResponse data\n'+JSON.stringify(result,null,2);generated=version;show();
     let failure='';
-    primary.disabled=reject.disabled=true;
+    primary.disabled=true;if(reject)reject.disabled=true;
     try{
       if(preview.submitUrl){
         state.textContent='Sending your response…';
@@ -164,14 +166,14 @@
       const head=failure||`${decisions[decision]} written to the summary. `;
       try{await navigator.clipboard.writeText(output.value);state.textContent=head+`Summary copied. Paste it into ticket #${preview.ticket.number}.`;}
       catch{output.focus();output.select();state.textContent=head+'Clipboard access was blocked; the text is selected. Press Ctrl+C or Command+C to copy.';}
-    }finally{primary.disabled=reject.disabled=false;}
+    }finally{primary.disabled=false;if(reject)reject.disabled=false;}
   }
   primary.addEventListener('click',()=>{
     const {action,open}=status();
     if(action)return act(action);
     state.textContent=`Not ready yet: ${open.map(o=>o.text).join('; ')}.`;$('a',openList)?.focus();
   });
-  reject.addEventListener('click',()=>{
+  reject?.addEventListener('click',()=>{
     if(overall.value.trim())return act('reject');
     state.textContent='Rejecting the ticket needs an overall note saying why.';overall.focus();
   });

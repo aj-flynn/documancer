@@ -10,7 +10,7 @@ const assets = new URL('../assets/', import.meta.url);
 const company = 'Flynn Technology LLC';
 // The JSON and the renderer move together: a document must declare exactly this schema version.
 export const schemaVersion = 2;
-export const packageVersion = '1.8.0';
+export const packageVersion = '1.9.0';
 const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 // A CSS string: every character that could end it or start an escape is written as a code point.
 const cssString = value => '"'+String(value).replace(/[^A-Za-z0-9 ]/gu, char => '\\'+char.codePointAt(0).toString(16)+' ')+'"';
@@ -32,9 +32,8 @@ function href(value, path) {
   } else if (value.split(/[/?#]/)[0].includes(':')) fail(path,'invalid relative URL');
 }
 function date(value, path) { if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value)) || new Date(value).toISOString().slice(0,10)!==value) fail(path,'expected a valid YYYY-MM-DD date'); }
-// Files beside the source: embedded at render time, never fetched. Each has a size limit, and so does their total.
-const fileKinds = {image:{extensions:['png','jpg','jpeg','webp'],expected:'a PNG, JPEG or WebP file',limit:1024*1024}, prototype:{extensions:['html'],expected:'an HTML file',limit:1024*1024}};
-const totalFileLimit = 6*1024*1024;
+// Files beside the source: embedded at render time, never fetched.
+const fileKinds = {image:{extensions:['png','jpg','jpeg','webp'],expected:'a PNG, JPEG or WebP file'}, prototype:{extensions:['html'],expected:'an HTML file'}};
 export function validate(doc) { inspect(doc); return doc; }
 // Validates the document and returns the files it refers to, which need the source folder to check.
 function inspect(doc) {
@@ -108,18 +107,16 @@ function inspect(doc) {
   return {files};
 }
 const imageType=bytes=>bytes.subarray(0,8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))?'png':bytes[0]===0xff&&bytes[1]===0xd8&&bytes[2]===0xff?'jpeg':bytes.subarray(0,4).toString('latin1')==='RIFF'&&bytes.subarray(8,12).toString('latin1')==='WEBP'?'webp':null;
-// Reads every referenced file from the source folder, refusing anything outside it, oversized or not what its name says.
+// Reads every referenced file from the source folder, refusing anything outside it or not what its name says.
 async function loadFiles(doc,entries,baseDirectory){
   const loaded=new Map();if(!entries.length)return loaded;
   if(!baseDirectory)fail(entries[0].at,'this document refers to a file beside its source; render it from the source file or pass baseDirectory');
-  const root=await realpath(resolve(baseDirectory));let total=0;
+  const root=await realpath(resolve(baseDirectory));
   for(const entry of entries){
     if(!loaded.has(entry.path)){
       let target;try{target=await realpath(resolve(root,entry.path));}catch{fail(entry.at,`file not found: ${entry.path}`);}
       const inside=relative(root,target);if(!inside||inside.startsWith('..')||isAbsolute(inside))fail(entry.at,'the file is outside the source folder');
-      const bytes=await readFile(target),kind=fileKinds[entry.kind];
-      if(bytes.length>kind.limit)fail(entry.at,`${entry.path} is ${Math.ceil(bytes.length/1024)} KB; the limit for one ${entry.kind} is ${kind.limit/1024} KB`);
-      total+=bytes.length;if(total>totalFileLimit)fail(entry.at,`the files in this document exceed ${totalFileLimit/1024/1024} MB in total`);
+      const bytes=await readFile(target);
       const item={bytes};
       if(entry.kind==='image'){
         item.type=imageType(bytes);const extension=entry.path.split('.').pop().toLowerCase().replace('jpg','jpeg');

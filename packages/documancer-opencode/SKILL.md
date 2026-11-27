@@ -13,7 +13,7 @@ Choose only the reference needed for the requested work:
 - **Technical** — architecture, configuration, contracts, integrations or operations: [technical.md](references/technical.md).
 - **User guide** — task instructions for people using a product: [user-guide.md](references/user-guide.md).
 - **UAT** — human acceptance journeys, results and notes: [uat.md](references/uat.md).
-- **Preview** — what a ticket would change, shown before it is built, with questions, views and response controls: [preview.md](references/preview.md).
+- **Preview** — what a ticket would change, shown before it is built, with questions, views and response controls: [preview.md](references/preview.md). A **review** is a preview of independent findings, such as usability observations, answered one view at a time: see "A review" in the same file.
 
 For multiple requested audiences, create separate documents with the same source identity and render them as an explicit set. Technical and user guides must never link to UAT, including in body content or sources. UAT links to either companion guide open in a new tab so test results remain intact. Match scope to the request; do not generate all three merely because they are available. A preview is a working document for one ticket: render it on its own, never in a set.
 

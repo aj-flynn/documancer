@@ -1,4 +1,5 @@
 // Preview mode: shows what a ticket would change before it is built, and collects the reader's response.
+// A review (ticket.kind "review") is the same page for a set of independent findings: each view is answered on its own and nothing is approved as a whole.
 // The agent writes content only. Layout, the prototype frame, response controls and submit logic live here and in assets/preview*.
 import {validateDiagram} from './diagram.mjs';
 
@@ -63,6 +64,7 @@ export function validatePreview(doc, t) {
   if (!/^[0-9a-f]{7,40}$/i.test(doc.ticket.builtAt.commit)) fail('ticket.builtAt.commit', 'expected a commit hash of 7 to 40 hexadecimal characters');
   date(doc.ticket.builtAt.date, 'ticket.builtAt.date');
   list(doc.ticket.surfaces, 'ticket.surfaces').forEach((x, i) => string(x, `ticket.surfaces[${i}]`));
+  const review = doc.ticket.kind === 'review';
 
   object(doc.problem, ['symptom','evidence','impact','source'], 'problem');
   for (const key of ['symptom','impact','source']) string(doc.problem[key], `problem.${key}`);
@@ -72,8 +74,9 @@ export function validatePreview(doc, t) {
 
   if (doc.findings !== undefined) list(doc.findings, 'findings').forEach((f, i) => { const p = `findings[${i}]`; object(f, ['title','text','basis'], p); string(f.title, p+'.title'); string(f.text, p+'.text'); oneOf(f.basis, ['checked','inferred'], p+'.basis'); });
 
-  object(doc.impact, Object.keys(impactLabels), 'impact');
-  for (const key of Object.keys(impactLabels)) {
+  // A review has no single change to size up, so its impact is optional.
+  if (!review || doc.impact !== undefined) object(doc.impact, Object.keys(impactLabels), 'impact');
+  if (doc.impact !== undefined) for (const key of Object.keys(impactLabels)) {
     const p = `impact.${key}`; object(doc.impact[key], ['answer','note'], p);
     oneOf(doc.impact[key].answer, ['yes','no','unknown'], p+'.answer');
     if (doc.impact[key].note !== undefined || doc.impact[key].answer !== 'no') string(doc.impact[key].note, p+'.note');
@@ -95,9 +98,10 @@ export function validatePreview(doc, t) {
     const p = `views[${i}]`;
     if (!v || typeof v !== 'object' || Array.isArray(v)) fail(p, 'expected an object');
     oneOf(v.kind, Object.keys(kinds), p+'.kind');
-    object(v, ['id','kind','title','ask','basis','informational','files','areas','changes','unchanged','notes','discussion', ...kindFields[v.kind]], p);
+    object(v, ['id','kind','title','ask','cost','basis','informational','files','areas','changes','unchanged','notes','discussion', ...kindFields[v.kind]], p);
     id(v.id, p+'.id', itemID); string(v.title, p+'.title'); oneOf(v.basis, Object.keys(bases), p+'.basis');
     if (v.informational !== undefined && typeof v.informational !== 'boolean') fail(p+'.informational', 'expected true or false');
+    if (v.cost !== undefined) { string(v.cost, p+'.cost'); const named = codeName(v.cost); if (named) fail(p+'.cost', `"${named}" looks like a file path or code name; say what it costs the user in their terms`); }
     optionalStrings(v.files, p+'.files'); optionalStrings(v.areas, p+'.areas'); optionalStrings(v.unchanged, p+'.unchanged');
     // The one question the reader answers on this view. A view that changes nothing asks nothing.
     if (v.informational) { if (v.ask !== undefined) fail(p+'.ask', 'an informational view asks nothing'); } else string(v.ask, p+'.ask'); optionalBlocks(v.notes, p+'.notes'); discussion(v.discussion, p+'.discussion');
@@ -110,6 +114,10 @@ export function validatePreview(doc, t) {
       if (v.informational) {
         if (v.now === undefined) fail(p+'.now', 'an informational screen shows the current screen');
         if (v.proposed !== undefined) fail(p+'.proposed', 'an informational view shows now only');
+      } else if (v.proposed === undefined) {
+        // A change of wording alone has no new screen to show: the current screen, and each change as now and proposed text.
+        if (v.now === undefined) fail(p+'.proposed', 'expected a prototype or an image; a view without one shows now and gives each change as now and proposed text');
+        v.changes.forEach((c, j) => { if (c.now === undefined) fail(`${p}.changes[${j}]`, 'without a proposed screen, each change gives now and proposed text'); });
       } else {
         object(v.proposed, ['prototype','image','alt'], p+'.proposed');
         if ((v.proposed.prototype === undefined) === (v.proposed.image === undefined)) fail(p+'.proposed', 'expected either a prototype or an image');
@@ -159,9 +167,10 @@ export function validatePreview(doc, t) {
     if (v.kind === 'operations') blocks(v.blocks, p+'.blocks');
   });
 
+  if (review && doc.work !== undefined) fail('work', 'a review creates no work of its own; the host files an issue for each view answered Yes');
   if (doc.work !== undefined) list(doc.work, 'work').forEach((w, i) => { const p = `work[${i}]`; object(w, ['title','outcome','size','touches'], p); string(w.title, p+'.title'); string(w.outcome, p+'.outcome'); oneOf(w.size, ['small','medium','large'], p+'.size'); optionalStrings(w.touches, p+'.touches'); });
   string(doc.leaveAsIs, 'leaveAsIs');
-  return ['problem','impact','decision', ...(doc.findings?.length ? ['findings'] : []), ...(doc.work?.length ? ['work'] : []), ...questions.map(q => q.id), ...doc.views.map(v => v.id)];
+  return ['problem','decision', ...(doc.impact ? ['impact'] : []), ...(doc.findings?.length ? ['findings'] : []), ...(doc.work?.length ? ['work'] : []), ...questions.map(q => q.id), ...doc.views.map(v => v.id)];
 }
 
 // A prototype is one self-contained HTML file. It is embedded in a sandboxed frame with a policy that blocks every
@@ -246,11 +255,12 @@ export function previewHTML(doc, t) {
   const discussion = items => items?.length ? `<div class="discussion"><h3>Earlier discussion</h3>${items.map(d => `<p class="said"><strong>${d.from === 'founder' ? 'Founder' : 'Agent'}:</strong> ${escape(d.text)}</p>`).join('')}</div>` : '';
   const carriedNote = '<p class="carried">Carried over from your response to an earlier version. Change it if it no longer holds.</p>';
   const whenText = when => { const [q, o] = when.split('='); return `Only with ${q} = ${o}`; };
-  const parts = [], data = {ticket: {repository: doc.ticket.repository, number: doc.ticket.number, version: doc.ticket.version}, submitUrl: t.state?.submitUrl ?? null, questions: [], views: []};
+  const review = doc.ticket.kind === 'review';
+  const parts = [], data = {review, ticket: {repository: doc.ticket.repository, number: doc.ticket.number, version: doc.ticket.version}, submitUrl: t.state?.submitUrl ?? null, questions: [], views: []};
 
-  parts.push({group: 'Background', id: 'problem', title: 'The problem', icon: 'problem', tone: 'hold', eyebrow: 'Why this ticket exists', body: `<p class="problem-symptom">${inlineCode(doc.problem.symptom)}</p>${t.blocks(doc.problem.evidence)}<p><strong>Why it matters.</strong> ${escape(doc.problem.impact)}</p>${fold('Where this came from', `<p><span class="origin">${doc.ticket.origin === 'agent' ? 'Raised by an agent' : 'Raised by the founder'}</span> ${escape(doc.problem.source)}</p>`)}`});
+  parts.push({group: 'Background', id: 'problem', title: 'The problem', icon: 'problem', tone: 'hold', eyebrow: review ? 'Why this review exists' : 'Why this ticket exists', body: `<p class="problem-symptom">${inlineCode(doc.problem.symptom)}</p>${t.blocks(doc.problem.evidence)}<p><strong>Why it matters.</strong> ${escape(doc.problem.impact)}</p>${fold('Where this came from', `<p><span class="origin">${doc.ticket.origin === 'agent' ? 'Raised by an agent' : 'Raised by the founder'}</span> ${escape(doc.problem.source)}</p>`)}`});
   if (doc.findings?.length) parts.push({group: 'Background', id: 'findings', title: 'What the request missed', icon: 'findings', tone: 'hold', eyebrow: 'Read before you decide', body: doc.findings.map(f => `<div class="note note-warning finding" role="note">${t.icons.warning}<div><h3>${escape(f.title)}</h3><p>${escape(f.text)}</p><p class="finding-basis" data-basis="${f.basis}">${f.basis === 'checked' ? 'Checked against the code' : 'Inferred, not checked'}</p></div></div>`).join('')});
-  parts.push({group: 'Background', id: 'impact', title: 'Impact', icon: 'impact', tone: 'hold', eyebrow: 'At a glance', body: `<dl class="impact-strip">${Object.entries(impactLabels).map(([key, text]) => { const {answer, note} = doc.impact[key]; const alert = answer === 'unknown' || (key === 'reversible' ? answer === 'no' : answer === 'yes'); return `<div class="${alert ? 'impact-alert' : 'impact-calm'}"><dt>${text}</dt><dd><strong>${capital(answer)}</strong>${note ? ` <span>${escape(note)}</span>` : ''}</dd></div>`; }).join('')}</dl>`});
+  if (doc.impact) parts.push({group: 'Background', id: 'impact', title: 'Impact', icon: 'impact', tone: 'hold', eyebrow: 'At a glance', body: `<dl class="impact-strip">${Object.entries(impactLabels).map(([key, text]) => { const {answer, note} = doc.impact[key]; const alert = answer === 'unknown' || (key === 'reversible' ? answer === 'no' : answer === 'yes'); return `<div class="${alert ? 'impact-alert' : 'impact-calm'}"><dt>${text}</dt><dd><strong>${capital(answer)}</strong>${note ? ` <span>${escape(note)}</span>` : ''}</dd></div>`; }).join('')}</dl>`});
 
   questions.forEach((q, i) => {
     const prior = carried.questions[q.id];
@@ -267,10 +277,12 @@ export function previewHTML(doc, t) {
   doc.views.forEach((v, i) => {
     const prior = carried.views[v.id], changes = v.changes ?? [];
     let body = '', behind = `<p>Now is from ${bases[v.basis]}.</p>`, varies = [];
+    if (v.cost) body += t.note('warning', 'What this costs the user', v.cost);
     if (changes.length) body += `<h3>What changes · ${changes.length}</h3><ol class="changes">${changes.map(changeHTML).join('')}</ol>`;
     if (v.kind === 'screen') {
       let pair = v.now ? figure('Now', v.now) : v.informational ? '' : '<div class="screen-side"><h3>Now</h3><p>This screen does not exist yet.</p></div>';
       if (v.proposed?.image) pair += figure('Proposed', v.proposed);
+      if (!v.proposed && !v.informational) pair += '<div class="screen-side"><h3>Proposed</h3><p>The same screen. Only the wording listed under What changes is different.</p></div>';
       if (v.proposed?.prototype) {
         const html = t.files.get(v.proposed.prototype).text; varies = variesBy(v, html, questions);
         const defaults = Object.fromEntries(varies.map(q => [q.id, carried.questions[q.id] && carried.questions[q.id].choice !== 'none' ? carried.questions[q.id].choice : q.recommended]));
@@ -303,7 +315,9 @@ export function previewHTML(doc, t) {
 
   if (doc.work?.length) parts.push({group: 'Finish', id: 'work', title: 'Work that will be created', icon: 'work', tone: 'hold', eyebrow: 'If you approve', body: `<p>If you approve, the work is split into these tickets.</p><ol class="work-list">${doc.work.map(w => `<li><strong>${escape(w.title)}</strong><span class="work-size">${capital(w.size)}</span><p>${escape(w.outcome)}</p></li>`).join('')}</ol>`});
   const sends = data.submitUrl ? `sends your response to ticket #${doc.ticket.number}` : 'writes a summary of your response and copies it, ready to paste into the ticket';
-  parts.push({group: 'Finish', id: 'decision', title: 'Your decision', icon: 'decision', tone: 'plain', eyebrow: 'Last step', cls: ' card-final', body: `<p id="decision-counts" aria-live="polite"></p><ul id="decision-open" class="prose-list"></ul><button id="ok-remaining" type="button">Yes to all remaining views</button><label class="notes-label" for="decision-note">Overall note <span class="note-rule">Required to reject the ticket.</span></label><textarea id="decision-note" rows="3" placeholder="Anything that applies to the whole ticket."></textarea><div class="decision-actions"><button class="primary-button" id="decision-primary" type="button" aria-describedby="decision-counts">Approve</button><button id="decision-reject" type="button">Reject ticket</button></div><p id="summary-state" role="status">Approve, Send back or Reject ticket ${sends}. Nothing is sent until you choose one.</p>${t.note('remember', 'If nothing is done', doc.leaveAsIs)}<label class="notes-label" for="summary-text">Response summary</label><textarea id="summary-text" rows="12" readonly placeholder="Your response will appear here."></textarea><pre id="print-summary"></pre>`});
+  // A review is finished, not approved: each view's answer is the decision, and there is no ticket to reject.
+  const actions = review ? `<div class="decision-actions"><button class="primary-button" id="decision-primary" type="button" aria-describedby="decision-counts">Finish review</button></div><p id="summary-state" role="status">Finish review ${sends}. Nothing is sent until you choose it.</p>` : `<div class="decision-actions"><button class="primary-button" id="decision-primary" type="button" aria-describedby="decision-counts">Approve</button><button id="decision-reject" type="button">Reject ticket</button></div><p id="summary-state" role="status">Approve, Send back or Reject ticket ${sends}. Nothing is sent until you choose one.</p>`;
+  parts.push({group: 'Finish', id: 'decision', title: 'Your decision', icon: 'decision', tone: 'plain', eyebrow: 'Last step', cls: ' card-final', body: `<p id="decision-counts" aria-live="polite"></p><ul id="decision-open" class="prose-list"></ul><button id="ok-remaining" type="button">Yes to all remaining views</button><label class="notes-label" for="decision-note">Overall note <span class="note-rule">${review ? 'Optional.' : 'Required to reject the ticket.'}</span></label><textarea id="decision-note" rows="3" placeholder="${review ? 'Anything that applies to the whole review.' : 'Anything that applies to the whole ticket.'}"></textarea>${actions}${t.note('remember', 'If nothing is done', doc.leaveAsIs)}<label class="notes-label" for="summary-text">Response summary</label><textarea id="summary-text" rows="12" readonly placeholder="Your response will appear here."></textarea><pre id="print-summary"></pre>`});
 
   const row = (id, title, status) => `<li><a href="#${escape(id)}">${label(id, title)}</a><span class="test-status" data-item="${escape(id)}">${status}</span></li>`;
   const index = `<ul class="test-index" aria-label="Responses in this preview">${questions.map(q => row(q.id, q.title, 'No choice')).join('')}${doc.views.map(v => row(v.id, v.title, v.informational ? 'For information' : 'No response')).join('')}</ul><p class="test-progress"></p>`;
